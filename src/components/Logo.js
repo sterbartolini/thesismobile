@@ -7,7 +7,7 @@ class Logo extends Component {
         return (
             <View style={styles.container}>
                 <Image style={styles.Logo} source={require('../images/logo.png')} />
-                <Text>Mobile Development</Text>
+
             </View>
         );
     }
@@ -16,12 +16,11 @@ class Logo extends Component {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        padding, 20px;
+        flexGrow: 1,
+        justifyContent: 'flex-end',
         alignItems: 'center',
-        // justifyContent: 'center',
-        // alignItems: 'center',
         backgroundColor: '#455a64',
+        paddingVertical: 10,
     },
     Logo: {
         width: 120,
