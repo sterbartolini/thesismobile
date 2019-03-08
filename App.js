@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import Login from './src/components/Login';
 import Register from './src/components/Register';
-
+import Map from './src/components/Map';
 
 export default class App extends Component {
   render() {
@@ -21,7 +21,7 @@ export default class App extends Component {
       <View style={styles.container}>
         {/* <Login /> */}
         {/* <Register /> */}
-
+        <Map />
       </View>
     );
   }
