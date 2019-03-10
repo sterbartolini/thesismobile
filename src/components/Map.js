@@ -1,15 +1,36 @@
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, Image } from 'react-native';
+import { StyleSheet, View, TouchableHighlight, Image, Dimensions } from 'react-native';
+// import Modal from 'react-native-modalbox';
+// import Button from 'react-native-button';
+// import AddModal from './AddIncidentModal';
+import ModalTester from './AddIncidentModal';
+import Header from './Header';
+
+var screen = Dimensions.get('window');
 
 
 class Map extends Component {
+    // constructor(props) {
+    //     super(props);
+    //     this.state = ({
+    //         deletedRowKey: null,
+    //     });
+    //     this._onPressAdd = this._onPressAdd.bind(this);
+    // }
+
+    // _onPressAdd() {
+    //     // alert("You add Item");
+    //     this.refs.addModal.showAddModal();
+    // }
+
     render() {
         return (
             <View style={styles.container}>
+                {/* <Header /> */}
                 <MapView
                     provider={PROVIDER_GOOGLE} // remove if not using Google Maps
-                    style={{ height: 600, width: 400 }}
+                    style={styles.map}
                     region={{
                         latitude: 37.78825,
                         longitude: -122.4324,
@@ -23,10 +44,10 @@ class Map extends Component {
                             latitude: 37.78825,
                             longitude: -122.4324,
                         }}
-                    //   description={marker.description}
                     />
-
                 </MapView>
+
+                <ModalTester />
             </View>
         );
     }
@@ -36,12 +57,15 @@ class Map extends Component {
 const styles = StyleSheet.create({
     container: {
         ...StyleSheet.absoluteFillObject,
-        flex: 1,
+        width: screen.width,
+        height: screen.height - 20,
         // justifyContent: 'center',
         // alignItems: 'center',
+
     },
     map: {
         ...StyleSheet.absoluteFillObject,
+
     },
 });
 

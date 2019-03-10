@@ -12,8 +12,9 @@ import {
   Platform, StyleSheet, Text, View,
 } from 'react-native';
 import Login from './src/components/Login';
-import Register from './src/components/Register';
+// import Register from './src/components/Register';
 import Map from './src/components/Map';
+import Header from './src/components/Header';
 
 export default class App extends Component {
   render() {
@@ -22,6 +23,8 @@ export default class App extends Component {
         {/* <Login /> */}
         {/* <Register /> */}
         <Map />
+        <Header />
+
       </View>
     );
   }
@@ -30,8 +33,8 @@ export default class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-
-    alignItems: 'center',
+    padding: 10,
+    // alignItems: 'center',
     backgroundColor: '#455a64',
   },
 });
