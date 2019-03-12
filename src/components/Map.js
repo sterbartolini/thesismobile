@@ -9,7 +9,7 @@ class Map extends Component {
             <View style={styles.container}>
                 <MapView
                     provider={PROVIDER_GOOGLE} // remove if not using Google Maps
-                    style={{ height: 600, width: 400 }}
+                    style={styles.map}
                     region={{
                         latitude: 37.78825,
                         longitude: -122.4324,

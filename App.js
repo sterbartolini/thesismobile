@@ -14,6 +14,7 @@ import {
 import Login from './src/components/Login';
 import Register from './src/components/Register';
 import Map from './src/components/Map';
+import ReportIncident from './src/components/ReportIncident';
 
 export default class App extends Component {
   render() {
@@ -22,6 +23,7 @@ export default class App extends Component {
         {/* <Login /> */}
         {/* <Register /> */}
         <Map />
+        <ReportIncident />
       </View>
     );
   }
