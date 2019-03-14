@@ -26,12 +26,13 @@ class Map extends Component {
     render() {
         return (
             <View style={styles.container}>
-                {/* <MapView
+                {/* <TouchableOpacity onPress={this.findCoordinates}> */}
+                <MapView
                     provider={PROVIDER_GOOGLE} // remove if not using Google Maps
                     style={styles.map}
-                    initialRegion={{
-                        latitude: this.state.lat,
-                        longitude: this.state.lng,
+                    region={{
+                        latitude: 37.7882,
+                        longitude: -122.432,
                         latitudeDelta: 0.015,
                         longitudeDelta: 0.0121,
                     }}
@@ -40,19 +41,20 @@ class Map extends Component {
                     <MapView.Marker
 
                         coordinate={{
-                            latitude: this.state.lat,
-                            longitude: this.state.lng,
+                            latitude: 37.7882,
+                            longitude: -122.432,
                         }}
                     //   description={marker.description}
                     />
 
-                </MapView> */}
-                <TouchableOpacity onPress={this.findCoordinates}>
+                </MapView>
+                {/* </TouchableOpacity> */}
+                {/* <TouchableOpacity onPress={this.findCoordinates}>
                     <Text>Find My Coords?</Text>
                     <Text>Latitude: {this.state.lat}</Text>
                     <Text>longitude: {this.state.lng}</Text>
-                </TouchableOpacity>
-            </View>
+                </TouchableOpacity> */}
+            </View >
         );
     }
 }
