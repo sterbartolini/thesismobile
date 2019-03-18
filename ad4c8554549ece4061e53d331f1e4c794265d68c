@@ -1,0 +1,54 @@
+[33mcommit ad4c8554549ece4061e53d331f1e4c794265d68c[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: sterbartolini <lesterbartolini@gmail.com>
+Date:   Thu Mar 14 23:53:51 2019 +0800
+
+    send current location with firebase
+
+[33mcommit 539e37012a0275d203ef7bcd9d26b5a3c433620f[m
+Author: sterbartolini <lesterbartolini@gmail.com>
+Date:   Wed Mar 13 02:44:27 2019 +0800
+
+    map with markers (geolocation)
+
+[33mcommit 716a70db9d99f74a2206d47c8d74217d12c43988[m
+Author: sterbartolini <lesterbartolini@gmail.com>
+Date:   Tue Mar 12 22:35:22 2019 +0800
+
+    added reportIncident.js
+
+[33mcommit 1a8503aa7e8bf6eda5808878d7f004c23e8dce11[m
+Author: sterbartolini <lesterbartolini@gmail.com>
+Date:   Fri Mar 8 22:41:40 2019 +0800
+
+    googlemaps
+
+[33mcommit a91667594763c1a27c0cc71576093b6322950490[m
+Merge: 1af4fb7 aa2054e
+Author: sterbartolini <lesterbartolini@gmail.com>
+Date:   Thu Mar 7 00:27:06 2019 +0800
+
+    Merge branch 'lester' of https://github.com/sterbartolini/thesismobile into lester
+
+[33mcommit 1af4fb777ef3c1d4e5f0175d208c8e06f17db5cf[m[33m ([m[1;31morigin/mark[m[33m)[m
+Author: sterbartolini <lesterbartolini@gmail.com>
+Date:   Thu Mar 7 00:25:31 2019 +0800
+
+    removed form and main
+
+[33mcommit aa2054ef339bef114f34c98078645405c2cf7afd[m
+Author: sterbartolini <lesterbartolini@gmail.com>
+Date:   Thu Mar 7 00:14:48 2019 +0800
+
+    removed main.js and form.js
+
+[33mcommit acf075c3b27cef7d238b710a1999d474fd42db5c[m
+Author: sterbartolini <lesterbartolini@gmail.com>
+Date:   Thu Mar 7 00:00:13 2019 +0800
+
+    login and register page
+
+[33mcommit d5478b208d481c9092b5212719093ef5c06568bb[m
+Author: sterbartolini <lesterbartolini@gmail.com>
+Date:   Wed Mar 6 20:51:47 2019 +0800
+
+    mobile app
