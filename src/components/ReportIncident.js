@@ -1,10 +1,13 @@
 import React, { Component } from "react";
-import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight } from "react-native";
+import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard } from "react-native";
 import Modal from 'react-native-modal';
 import Button from 'react-native-button'
 import 'babel-polyfill';
 import 'es6-symbol';
 import { db } from '../config/fire';
+import RadioGroup from 'react-native-radio-buttons-group';
+import apiKey from '../config/apiKey';
+import _ from 'lodash';
 
 // let addLong = item => {
 //     db.ref('/userLocation').push({
@@ -22,55 +25,115 @@ import { db } from '../config/fire';
 var screen = Dimensions.get('window');
 
 export default class ReportIncident extends Component {
-    state = {
-        isModalVisible: false,
-        longtitude: '',
-        latitude: ''
-    };
-
-
-    findCoordinates = () => {
-        navigator.geolocation.getCurrentPosition(
-            position => {
-                const latitude = JSON.stringify(position.coords.latitude);
-                const longtitude = JSON.stringify(position.coords.longitude);
-
-                this.setState({ latitude, longtitude });
-                // addLat(this.state.latitude);
-                // addLong(this.state.longtitude);
-                let firebaseRef = db.ref('/userLocation');
-                firebaseRef.push({
-                    coordinates: { longtitude: this.state.longtitude, latitude: this.state.latitude }
-                });
+    constructor(props) {
+        super(props);
+        this.state = {
+            isModalVisible: false,
+            incidentType: '',
+            incidentLocation: '',
+            error: "",
+            latitude: 0,
+            longitude: 0,
+            locationPredictions: [],
+            data: [{
+                label: "Vehicular Accident",
+                value: "Vehicular Accident",
 
             },
-            error => Alert.alert(error.message),
-            { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
+            {
+                label: "Physical Injury",
+                value: "Physical Injury",
+            }]
+        };
+        this.onChangeDestinationDebounced = _.debounce(
+            this.onChangeDestination,
+            1000
         );
-    };
+    }
+    // update state
+    onPress = data => this.setState({ incidentType: data });
 
-    // handleChangeLng = e => {
-    //     this.setState({
-    //         longtitude: e.nativeEvent.text,
 
-    //     });
-    // };
-    // handleChangeLat = e => {
-    //     this.setState({
-    //         latitude: e.nativeEvent.text,
-    //     });
-    // };
+    componentDidMount() {
+        //Get current location and set initial region to this
+        navigator.geolocation.getCurrentPosition(
+            position => {
+                this.setState({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                });
+            },
+            error => this.setState({ error: error.message }),
+            { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
+        );
+    }
 
-    // handleSubmit = () => {
-    //     addLat(this.state.latitude);
-    //     addLong(this.state.longtitude);
+    async onChangeDestination(incidentLocation) {
+        this.setState({ incidentLocation });
+        const apiUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?key=${apiKey}&input={${incidentLocation}}&location=${
+            this.state.latitude
+            },${this.state.longitude}&radius=2000`;
+        const result = await fetch(apiUrl);
+        const jsonResult = await result.json();
+        this.setState({
+            locationPredictions: jsonResult.predictions
+        });
+        console.log(jsonResult);
+    }
 
-    // };
+    pressedPrediction(prediction) {
+        console.log(prediction);
+        Keyboard.dismiss();
+        this.setState({
+            locationPredictions: [],
+            incidentLocation: prediction.description
+        });
+        Keyboard;
+    }
 
-    _toggleModal = () =>
+    _toggleModal = () => {
         this.setState({ isModalVisible: !this.state.isModalVisible });
+    }
+
+    submitIncidentHandler = () => {
+        db.ref('/userLocation').push({
+            incidentType: this.state.incidentType,
+            incidentLocation: this.state.incidentLocation,
+            unresponded: true,
+            isResponding: false,
+            isSettled: false,
+            coordinates: { longitude: this.state.longitude, latitude: this.state.latitude }
+        });
+        this.setState({
+            incidentType: '',
+            incidentLocation: '',
+            unresponded: null,
+            isResponding: null,
+            isSettled: null,
+            lng: null,
+            lat: null
+        });
+        console.log(this.state.incidentsList);
+    }
+
 
     render() {
+        const locationPredictions = this.state.locationPredictions.map(
+            prediction => (
+                <TouchableHighlight
+                    key={prediction.id}
+                    onPress={() => this.pressedPrediction(prediction)}
+                >
+                    <Text style={styles.locationSuggestion}>
+                        {prediction.description}
+                    </Text>
+                </TouchableHighlight>
+            )
+        );
+
+        let selectedButton = this.state.data.find(e => e.selected == true);
+        selectedButton = selectedButton ? selectedButton.value : this.state.data[0].label;
+
         return (
             <View>
                 <TouchableOpacity style={{ top: screen.height - 120, paddingLeft: 20, paddingBottom: 30 }} onPress={this._toggleModal}>
@@ -88,6 +151,12 @@ export default class ReportIncident extends Component {
                         backgroundColor: 'white'
                     }}
                 >
+                    <TouchableOpacity stype={{ alignSelf: "left" }} onPress={this._toggleModal}>
+                        <Image
+                            style={{ width: 45, height: 45 }}
+                            source={require('../images/close.jpg')}
+                        />
+                    </TouchableOpacity>
                     <Text style={{
                         fontSize: 16,
                         fontWeight: 'bold',
@@ -95,38 +164,22 @@ export default class ReportIncident extends Component {
                         marginTop: 40
                     }}>Input Incident
                     </Text>
-                    {/* <TextInput
-                        style={{
-                            height: 40,
-                            borderBottomColor: 'gray',
-                            marginLeft: 30,
-                            marginRight: 30,
-                            marginTop: 20,
-                            marginBottom: 10,
-                            borderBottomWidth: 1
-                        }}
-                        // onChangeText={(text) => this.setState({ newFoodName: text })}
-                        placeholder="Enter Latitude"
-                    // value={this.state.newFoodName}                 
-                    />
+                    <RadioGroup radioButtons={this.state.data} onPress={this.onPress} />
+
                     <TextInput
-                        style={{
-                            height: 40,
-                            borderBottomColor: 'gray',
-                            marginLeft: 30,
-                            marginRight: 30,
-                            marginTop: 10,
-                            marginBottom: 20,
-                            borderBottomWidth: 1
+                        placeholder="Enter location.."
+                        style={styles.destinationInput}
+                        onChangeText={incidentLocation => {
+                            this.setState({ incidentLocation });
+                            this.onChangeDestinationDebounced(incidentLocation);
                         }}
+                        value={this.state.incidentLocation}
 
-                        // onChangeText={(text) => this.setState({ newFoodDescription: text })}
-                        placeholder="Enter Longtitude"
-                    // value={this.state.newFoodDescription}
                     />
+                    {locationPredictions}
                     <Button
                         style={{ fontSize: 18, color: 'white' }}
-                        onPress={this._toggleModal}
+                        onPress={this.submitIncidentHandler}
                         containerStyle={{
                             padding: 8,
                             marginLeft: 70,
@@ -136,42 +189,8 @@ export default class ReportIncident extends Component {
                             backgroundColor: 'mediumseagreen'
                         }}
                     >
-                        Report Incident
-                    </Button> */}
-
-
-
-                    <TouchableOpacity onPress={this.findCoordinates}>
-                        <Text style={styles.title}>Touch to find your location</Text>
-                        <Text>Latitude: {this.state.latitude}</Text>
-                        <Text>longitude: {this.state.longtitude}</Text>
-                    </TouchableOpacity>
-                    <Button
-                        style={{ fontSize: 18, color: 'white' }}
-                        onPress={this._toggleModal}
-                        containerStyle={{
-                            padding: 8,
-                            marginLeft: 70,
-                            marginRight: 70,
-                            height: 40,
-                            borderRadius: 6,
-                            backgroundColor: 'mediumseagreen'
-                        }}
-                    >
-                        <Text>Back</Text>
+                        <Text>Submit Incident</Text>
                     </Button>
-
-                    {/* <TextInput style={styles.itemInput} onChange={this.handleChangeLat} />
-                    <TextInput style={styles.itemInput} onChange={this.handleChangeLng} />
-                    <TouchableHighlight
-                        style={styles.button}
-                        underlayColor="white"
-                        onPress={this.handleSubmit}
-                    >
-                        <Text style={styles.buttonText}>Add</Text>
-                    </TouchableHighlight> */}
-
-                    {/* </View> */}
                 </Modal>
             </View>
         );
@@ -218,5 +237,25 @@ const styles = StyleSheet.create({
         marginTop: 10,
         alignSelf: 'stretch',
         justifyContent: 'center'
-    }
+    },
+    valueText: {
+        fontSize: 18,
+        marginBottom: 50,
+    },
+    destinationInput: {
+        borderWidth: 0.5,
+        borderColor: "grey",
+        height: 40,
+        marginTop: 50,
+        marginLeft: 5,
+        marginRight: 5,
+        padding: 5,
+        backgroundColor: "white"
+    },
+    locationSuggestion: {
+        backgroundColor: "white",
+        padding: 3,
+        fontSize: 15,
+        borderWidth: 0.5
+    },
 });
