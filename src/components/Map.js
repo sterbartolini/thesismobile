@@ -2,6 +2,7 @@ import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, Platform, Alert, } from 'react-native';
 import ReportIncident from './ReportIncident';
+import UserProfile from './userProfile';
 
 
 
@@ -47,7 +48,6 @@ class userMap extends Component {
         return (
             <View style={styles.container}>
                 {/* <TouchableOpacity onPress={this.findCoordinates}> */}
-
                 <MapView
                     provider={PROVIDER_GOOGLE} // remove if not using Google Maps
                     style={styles.map}
@@ -71,6 +71,7 @@ class userMap extends Component {
 
                 </MapView>
                 <ReportIncident />
+                <UserProfile />
                 {/* </TouchableOpacity> */}
                 {/* <TouchableOpacity onPress={this.findCoordinates}>
                     <Text>Find My Coords?</Text>
