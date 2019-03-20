@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard } from "react-native";
+import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alerteex } from "react-native";
 import Modal from 'react-native-modal';
 import Button from 'react-native-button'
 import 'babel-polyfill';
@@ -8,19 +8,6 @@ import { db } from '../config/fire';
 import RadioGroup from 'react-native-radio-buttons-group';
 import apiKey from '../config/apiKey';
 import _ from 'lodash';
-
-// let addLong = item => {
-//     db.ref('/userLocation').push({
-//         longtitude: item,
-//     });
-// };
-
-// let addLat = item => {
-//     db.ref('/userLocation').push({
-//         latitude: item,
-//     });
-// };
-
 
 var screen = Dimensions.get('window');
 
@@ -51,11 +38,18 @@ export default class ReportIncident extends Component {
         );
     }
     // update state
-    onPress = data => this.setState({ incidentType: data });
+    onPress = data => {
+        this.setState({ data });
+
+        let selectedButton = this.state.data.find(e => e.selected == true);
+        selectedButton = selectedButton ? selectedButton.value : this.state.data[0].label;
+        this.setState({ incidentType: selectedButton });
+    }
+
 
 
     componentDidMount() {
-        //Get current location and set initial region to this
+
         navigator.geolocation.getCurrentPosition(
             position => {
                 this.setState({
@@ -114,6 +108,19 @@ export default class ReportIncident extends Component {
             lat: null
         });
         console.log(this.state.incidentsList);
+        Alert.alert(
+            'Attention: ',
+            'Report has been sent',
+            [
+                {
+                    text: 'Cancel',
+                    onPress: () => console.log('Cancel Pressed'),
+                    style: 'cancel',
+                },
+                { text: 'OK', onPress: () => console.log('OK Pressed') },
+            ],
+            { cancelable: false },
+        );
     }
 
 
@@ -131,8 +138,8 @@ export default class ReportIncident extends Component {
             )
         );
 
-        let selectedButton = this.state.data.find(e => e.selected == true);
-        selectedButton = selectedButton ? selectedButton.value : this.state.data[0].label;
+        // let selectedButton = this.state.data.find(e => e.selected == true);
+        // selectedButton = selectedButton ? selectedButton.value : this.state.data[0].label;
 
         return (
             <View>
@@ -148,24 +155,25 @@ export default class ReportIncident extends Component {
                         borderRadius: 20,
                         shadowRadius: 10,
                         width: screen.width - 50,
-                        backgroundColor: 'white'
+                        backgroundColor: 'white',
+
                     }}
                 >
-                    <TouchableOpacity stype={{ alignSelf: "left" }} onPress={this._toggleModal}>
+                    <TouchableOpacity onPress={this._toggleModal}>
                         <Image
-                            style={{ width: 45, height: 45 }}
+                            style={{ width: 45, height: 45, marginLeft: 240 }}
                             source={require('../images/close.jpg')}
                         />
                     </TouchableOpacity>
                     <Text style={{
-                        fontSize: 16,
+                        fontSize: 20,
                         fontWeight: 'bold',
                         textAlign: 'center',
-                        marginTop: 40
-                    }}>Input Incident
+                        marginTop: 20,
+                        marginBottom: 15
+                    }}>INPUT INCIDENT
                     </Text>
                     <RadioGroup radioButtons={this.state.data} onPress={this.onPress} />
-
                     <TextInput
                         placeholder="Enter location.."
                         style={styles.destinationInput}
@@ -186,10 +194,11 @@ export default class ReportIncident extends Component {
                             marginRight: 70,
                             height: 40,
                             borderRadius: 6,
-                            backgroundColor: 'mediumseagreen'
+                            backgroundColor: 'mediumseagreen',
+                            marginTop: 20,
                         }}
                     >
-                        <Text>Submit Incident</Text>
+                        <Text style={{ justifyContent: 'center', color: 'white' }} >Submit Incident</Text>
                     </Button>
                 </Modal>
             </View>
@@ -246,9 +255,9 @@ const styles = StyleSheet.create({
         borderWidth: 0.5,
         borderColor: "grey",
         height: 40,
-        marginTop: 50,
-        marginLeft: 5,
-        marginRight: 5,
+        marginTop: 10,
+        marginLeft: 20,
+        marginRight: 20,
         padding: 5,
         backgroundColor: "white"
     },
