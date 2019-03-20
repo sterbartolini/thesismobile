@@ -4,9 +4,20 @@ import {
     TouchableOpacity
 } from 'react-native';
 
+import { Actions } from 'react-native-router-flux';
+
 import Logo from './Logo'
 
 class Login extends Component {
+
+    signUp() {
+        Actions.signup()
+    }
+
+    userMaps() {
+        Actions.userMap()
+    }
+
     render() {
         return (
             <View style={styles.container}>
@@ -26,15 +37,14 @@ class Login extends Component {
                     placeholderTextColor="#ffffff"
                     ref={(input) => this.password = input}
                 />
-                <TouchableOpacity style={styles.button}>
+                <TouchableOpacity style={styles.button} onPress={this.userMaps}>
                     <Text style={styles.buttonText}>
-
                         Login
               </Text>
                 </TouchableOpacity>
                 <View style={styles.signupTextCont}>
                     <Text style={styles.signupText}>Don't have an account yet?</Text>
-                    <TouchableOpacity onPress={this.signup}><Text style={styles.signupButton}> Signup</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={this.signUp}><Text style={styles.signupButton}> Signup</Text></TouchableOpacity>
                 </View>
 
             </View>
