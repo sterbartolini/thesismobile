@@ -1,13 +1,23 @@
 import React, { Component } from "react";
 import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
 import Modal from 'react-native-modal';
-import Button from 'react-native-button'
+import Button from 'react-native-button';
 import 'babel-polyfill';
 import 'es6-symbol';
-import { db } from '../config/fire';
+import fire from '../config/fire';
 import RadioGroup from 'react-native-radio-buttons-group';
 import apiKey from '../config/apiKey';
 import _ from 'lodash';
+
+// import UserMap from '../components/Map';
+
+import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
+
+import PolyLine from '@mapbox/polyline';
+
+// import { Actions } from 'react-native-router-flux';
+
+
 
 var screen = Dimensions.get('window');
 
@@ -18,6 +28,7 @@ export default class ReportIncident extends Component {
             isModalVisible: false,
             incidentType: '',
             incidentLocation: '',
+            pointCoords: [],
             error: "",
             latitude: 0,
             longitude: 0,
@@ -44,6 +55,7 @@ export default class ReportIncident extends Component {
         let selectedButton = this.state.data.find(e => e.selected == true);
         selectedButton = selectedButton ? selectedButton.value : this.state.data[0].label;
         this.setState({ incidentType: selectedButton });
+
     }
 
 
@@ -60,6 +72,36 @@ export default class ReportIncident extends Component {
             error => this.setState({ error: error.message }),
             { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
         );
+
+    }
+
+
+
+    async getRouteDirection(destinationPlaceId, destinationName) {
+        try {
+            const response = await fetch(
+                `https://maps.googleapis.com/maps/api/directions/json?origin=${
+                this.state.latitude
+                },${
+                this.state.longitude
+                }&destination=place_id:${destinationPlaceId}&key=${apiKey}`
+            );
+            const json = await response.json();
+            console.log(json);
+            const points = PolyLine.decode(json.routes[0].overview_polyline.points);
+            const pointCoords = points.map(point => {
+                return { latitude: point[0], longitude: point[1] };
+            });
+            this.setState({
+                pointCoords,
+                locationPredictions: [],
+                incidentLocation: destinationName,
+            });
+            Keyboard.dismiss();
+            this.map.fitToCoordinates(pointCoords);
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     async onChangeDestination(incidentLocation) {
@@ -75,29 +117,31 @@ export default class ReportIncident extends Component {
         console.log(jsonResult);
     }
 
-    pressedPrediction(prediction) {
-        console.log(prediction);
-        Keyboard.dismiss();
-        this.setState({
-            locationPredictions: [],
-            incidentLocation: prediction.description
-        });
-        Keyboard;
-    }
+    // pressedPrediction = (prediction) => {
+    //     console.log(prediction);
+    //     Keyboard.dismiss();
+    //     this.setState({
+    //         locationPredictions: [],
+    //         incidentLocation: prediction.description
+    //     });
+    //     Keyboard;
+    //     <UserMap destinationID={prediction.place_id} />
+    //     console.log("ngano", prediction.place_id);
+    // }
 
     _toggleModal = () => {
         this.setState({ isModalVisible: !this.state.isModalVisible });
     }
 
     submitIncidentHandler = () => {
-        db.ref('/userLocation').push({
-            incidentType: this.state.incidentType,
-            incidentLocation: this.state.incidentLocation,
-            unresponded: true,
-            isResponding: false,
-            isSettled: false,
-            coordinates: { longitude: this.state.longitude, latitude: this.state.latitude }
-        });
+        // fire.database.ref('/userLocation').push({
+        //     incidentType: this.state.incidentType,
+        //     incidentLocation: this.state.incidentLocation,
+        //     unresponded: true,
+        //     isResponding: false,
+        //     isSettled: false,
+        //     coordinates: { longitude: this.state.longitude, latitude: this.state.latitude }
+        // });
         this.setState({
             incidentType: '',
             incidentLocation: '',
@@ -117,7 +161,7 @@ export default class ReportIncident extends Component {
                     onPress: () => console.log('Cancel Pressed'),
                     style: 'cancel',
                 },
-                { text: 'OK', onPress: () => console.log('OK Pressed') },
+                { text: 'OK', onPress: () => console.log('Cancel Pressed') },
             ],
             { cancelable: false },
         );
@@ -125,12 +169,31 @@ export default class ReportIncident extends Component {
 
 
     render() {
+
+        let marker = null;
+
+        if (this.state.pointCoords.length > 1) {
+            marker = (
+                <Marker
+                    coordinate={this.state.pointCoords[this.state.pointCoords.length - 1]}
+                />
+            );
+        }
+
+
         const locationPredictions = this.state.locationPredictions.map(
             prediction => (
                 <TouchableHighlight
                     key={prediction.id}
-                    onPress={() => this.pressedPrediction(prediction)}
+                    onPress={() =>
+                        // this.pressedPrediction(prediction)
+                        this.getRouteDirection(
+                            prediction.place_id,
+                            prediction.structured_formatting.main_text
+                        )
+                    }
                 >
+
                     <Text style={styles.locationSuggestion}>
                         {prediction.description}
                     </Text>
@@ -142,7 +205,26 @@ export default class ReportIncident extends Component {
         // selectedButton = selectedButton ? selectedButton.value : this.state.data[0].label;
 
         return (
-            <View>
+            <View style={styles.container}>
+                <MapView
+                    ref={map => { this.map = map; }}
+                    provider={PROVIDER_GOOGLE} // remove if not using Google Maps
+                    style={styles.map}
+                    region={{
+                        latitude: this.state.latitude,
+                        longitude: this.state.longitude,
+                        latitudeDelta: 0.015,
+                        longitudeDelta: 0.0121,
+                    }}
+                    showsUserLocation={true}
+
+                >
+                    <Polyline
+                        coordinates={this.state.pointCoords}
+                        strokeWidth={4}
+                        strokeColor="red"
+                    />
+                </MapView>
                 <TouchableOpacity style={{ top: screen.height - 120, paddingLeft: 20, paddingBottom: 30 }} onPress={this._toggleModal}>
                     <Image
                         style={{ width: 65, height: 65 }}
@@ -187,7 +269,8 @@ export default class ReportIncident extends Component {
                     {locationPredictions}
                     <Button
                         style={{ fontSize: 18, color: 'white' }}
-                        onPress={this.submitIncidentHandler}
+                        // onPress={this.submitIncidentHandler}
+                        onPress={this._toggleModal}
                         containerStyle={{
                             padding: 8,
                             marginLeft: 70,
@@ -214,6 +297,15 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         justifyContent: 'center',
         backgroundColor: '#6565fc'
+    },
+    container: {
+        ...StyleSheet.absoluteFillObject,
+        flex: 1,
+        // justifyContent: 'center',
+        // alignItems: 'center',
+    },
+    map: {
+        ...StyleSheet.absoluteFillObject,
     },
     title: {
         marginBottom: 20,

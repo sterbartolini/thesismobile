@@ -1,4 +1,7 @@
-import firebase from 'firebase';
+import firebase from '@firebase/app';
+import '@firebase/auth';
+import "@firebase/database";
+
 var config = {
     apiKey: "AIzaSyBgzYBdUhkg4o-015KSPN0BYX9YrctNdG0",
     authDomain: "emergencyresponsesystem-57dc4.firebaseapp.com",
@@ -8,4 +11,6 @@ var config = {
     messagingSenderId: "583480520859"
 };
 let app = firebase.initializeApp(config);
-export const db = app.database();  
+// export const db = app.database();
+
+export default app;

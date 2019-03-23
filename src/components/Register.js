@@ -4,13 +4,13 @@ import {
     TouchableOpacity
 } from 'react-native';
 
-import Logo from './Logo'
+import Logo from './Logo';
 
 class Register extends Component {
     render() {
         return (
             <View style={styles.container}>
-                <Logo />
+                {/* <Logo /> */}
                 <TextInput style={styles.inputBox}
                     underlineColorAndroid='rgba(0,0,0,0)'
                     placeholder="First Name"
@@ -50,13 +50,13 @@ class Register extends Component {
                     placeholderTextColor="#ffffff"
                 // ref={(input) => this.password = input}
                 />
-                <TextInput style={styles.inputBox}
+                {/* <TextInput style={styles.inputBox}
                     underlineColorAndroid='rgba(0,0,0,0)'
                     placeholder="Re-type Password"
                     secureTextEntry={true}
                     placeholderTextColor="#ffffff"
                 // ref={(input) => this.password = input}
-                />
+                /> */}
                 <TouchableOpacity style={styles.button}>
                     <Text style={styles.buttonText}>
                         Register

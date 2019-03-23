@@ -4,18 +4,49 @@ import {
     TouchableOpacity
 } from 'react-native';
 
+
+
 import { Actions } from 'react-native-router-flux';
 
-import Logo from './Logo'
+import Logo from './Logo';
+// import * as firebase from '../config/fire';
+
+import app from '../config/fire';
 
 class Login extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            email: '',
+            password: '',
+        }
+    }
+
 
     signUp() {
-        Actions.signup()
+        Actions.userMap()
+    }
+
+    Volunteer() {
+        Actions.Volunteer()
+    }
+
+    Responder() {
+        Actions.Responder()
     }
 
     userMaps() {
+        // app.auth().signInWithEmailAndPassword(this.state.email, this.state.password).then((u) => {
+        //     // Actions.userMap()
+        //     console.log("LOGIN", u)
+        // }).catch((error) => {
+        //     console.log(error);
+        // })
         Actions.userMap()
+    }
+
+    handleChange = (e) => {
+        this.setState({ [e.target.name]: e.target.value });
     }
 
     render() {
@@ -28,18 +59,32 @@ class Login extends Component {
                     placeholderTextColor="#ffffff"
                     selectionColor="#fff"
                     keyboardType="email-address"
-                    onSubmitEditing={() => this.password.focus()}
+                    // onSubmitEditing={() => this.password.focus()}
+                    // value={this.state.email}
+                    onChange={this.handleChange}
                 />
                 <TextInput style={styles.inputBox}
                     underlineColorAndroid='rgba(0,0,0,0)'
                     placeholder="Password"
                     secureTextEntry={true}
                     placeholderTextColor="#ffffff"
-                    ref={(input) => this.password = input}
+                    // ref={(input) => this.password = input}
+                    // value={this.state.password}
+                    onChange={this.handleChange}
                 />
-                <TouchableOpacity style={styles.button} onPress={this.userMaps}>
+                <TouchableOpacity style={styles.button} onPress={this.signUp}>
                     <Text style={styles.buttonText}>
                         Login
+              </Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={this.Responder}>
+                    <Text style={styles.buttonText}>
+                        Responder
+              </Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={this.Volunteer}>
+                    <Text style={styles.buttonText}>
+                        Volunteer
               </Text>
                 </TouchableOpacity>
                 <View style={styles.signupTextCont}>
