@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
+import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert, ActivityIndicator } from "react-native";
 import Modal from 'react-native-modal';
 import Button from 'react-native-button';
 import 'babel-polyfill';
@@ -26,23 +26,45 @@ export default class Responder extends Component {
         super(props);
         this.state = {
             isModalVisible: false,
+            findIncident: false,
+            requestVolunteer: false,
             incidentType: '',
             incidentLocation: '',
             pointCoords: [],
             error: "",
-            latitude: 0,
-            longitude: 0,
+            latitude: null,
+            longitude: null,
+            locationPredictions: [],
+            data: [{
+                label: "Vehicular Accident",
+                value: "Vehicular Accident",
 
+            },
+            {
+                label: "Physical Injury",
+                value: "Physical Injury",
+            }],
         };
-
+        this.onChangeDestinationDebounced = _.debounce(
+            this.onChangeDestination,
+            1000
+        );
     }
     // update state
+    onPress = data => {
+        this.setState({ data });
+
+        let selectedButton = this.state.data.find(e => e.selected == true);
+        selectedButton = selectedButton ? selectedButton.value : this.state.data[0].label;
+        this.setState({ incidentType: selectedButton });
+
+    }
 
 
 
     componentDidMount() {
 
-        navigator.geolocation.getCurrentPosition(
+        this.watchId = navigator.geolocation.watchPosition(
             position => {
                 this.setState({
                     latitude: position.coords.latitude,
@@ -55,6 +77,21 @@ export default class Responder extends Component {
 
     }
 
+    componentWillUnmount() {
+        navigator.geolocation.clearWatch(this.watchId);
+    }
+
+    async requestVolunteer() {
+        this.setState({
+            requestVolunteer: true,
+        })
+    }
+
+    async findIncident() {
+        this.setState({
+            findIncident: true,
+        })
+    }
 
 
     async getRouteDirection(destinationPlaceId, destinationName) {
@@ -84,6 +121,30 @@ export default class Responder extends Component {
         }
     }
 
+    async onChangeDestination(incidentLocation) {
+        this.setState({ incidentLocation });
+        const apiUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?key=${apiKey}&input={${incidentLocation}}&location=${
+            this.state.latitude
+            },${this.state.longitude}&radius=2000`;
+        const result = await fetch(apiUrl);
+        const jsonResult = await result.json();
+        this.setState({
+            locationPredictions: jsonResult.predictions
+        });
+        console.log(jsonResult);
+    }
+
+    // pressedPrediction = (prediction) => {
+    //     console.log(prediction);
+    //     Keyboard.dismiss();
+    //     this.setState({
+    //         locationPredictions: [],
+    //         incidentLocation: prediction.description
+    //     });
+    //     Keyboard;
+    //     <UserMap destinationID={prediction.place_id} />
+    //     console.log("ngano", prediction.place_id);
+    // }
 
     _toggleModal = () => {
         this.setState({ isModalVisible: !this.state.isModalVisible });
@@ -93,16 +154,39 @@ export default class Responder extends Component {
     render() {
 
         let marker = null;
-
-        if (this.state.pointCoords.length > 1) {
+        let len = this.state.pointCoords;
+        if (len.length > 1) {
             marker = (
                 <Marker
-                    coordinate={this.state.pointCoords[this.state.pointCoords.length - 1]}
+                    coordinate={this.state.pointCoords[len.length - 1]}
                 />
             );
         }
 
+        if (this.state.latitude === null) return null;
 
+        const locationPredictions = this.state.locationPredictions.map(
+            prediction => (
+                <TouchableHighlight
+                    key={prediction.id}
+                    onPress={() =>
+                        // this.pressedPrediction(prediction)
+                        this.getRouteDirection(
+                            prediction.place_id,
+                            prediction.structured_formatting.main_text
+                        )
+                    }
+                >
+
+                    <Text style={styles.locationSuggestion}>
+                        {prediction.description}
+                    </Text>
+                </TouchableHighlight>
+            )
+        );
+
+        // let selectedButton = this.state.data.find(e => e.selected == true);
+        // selectedButton = selectedButton ? selectedButton.value : this.state.data[0].label;
 
         return (
             <View style={styles.container}>
@@ -126,6 +210,26 @@ export default class Responder extends Component {
                     />
                 </MapView>
 
+                <TouchableOpacity style={styles.button} onPress={() => this.findIncident()}>
+                    <Text style={styles.buttonText}>
+                        Find Incident
+              </Text>
+                    {this.state.findIncident === true ? (
+                        <ActivityIndicator
+                            animating={this.state.findIncident}
+                            color="white" />
+                    ) : null}
+                </TouchableOpacity>
+
+                {/* <TouchableOpacity style={styles.button} onPress={() => this.requestVolunteer()}>
+                    <Text style={styles.buttonText}>
+                        Request Volunteer
+              </Text>
+                </TouchableOpacity>
+                {this.state.requestVolunteer === true ? (
+                    <ActivityIndicator
+                        animating={this.state.requestVolunteer} />
+                ) : null} */}
             </View>
         );
     }
@@ -170,16 +274,19 @@ const styles = StyleSheet.create({
         alignSelf: 'center'
     },
     button: {
-        height: 45,
-        flexDirection: 'row',
-        backgroundColor: 'white',
-        borderColor: 'white',
-        borderWidth: 1,
-        borderRadius: 8,
-        marginBottom: 10,
-        marginTop: 10,
-        alignSelf: 'stretch',
-        justifyContent: 'center'
+        width: 300,
+        backgroundColor: '#1c313a',
+        borderRadius: 25,
+        marginVertical: 10,
+        paddingVertical: 13,
+        marginTop: "auto",
+        marginLeft: 50,
+    },
+    buttonText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#ffffff',
+        textAlign: 'center'
     },
     valueText: {
         fontSize: 18,
