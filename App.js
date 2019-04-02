@@ -45,8 +45,8 @@ export default class App extends Component {
     return (
       <View style={styles.container}>
         <StatusBar backgroundColor="#1c313a" barStyle="light-content" />
-        {/* <Routes/> */}
-        {this.state.user ? <ReportIncident userId={this.state.userId} /> : <Login />}
+        <Routes />
+        {/* {this.state.user ? <ReportIncident userId={this.state.userId} /> : <Login />} */}
 
       </View>
     );

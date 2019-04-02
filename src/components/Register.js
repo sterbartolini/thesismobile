@@ -3,10 +3,86 @@ import {
     StyleSheet, Text, View, TextInput,
     TouchableOpacity
 } from 'react-native';
+import RadioGroup from "react-native-radio-buttons-group";
+import db, { app } from '../config/fire';
 
 import Logo from './Logo';
 
+
 class Register extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            email: '',
+            password: '',
+            firstName: '',
+            lastName: '',
+            contactNumber: '',
+            isMobile: true,
+            user_type: '',
+            user: {},
+            userId: '',
+            data: [
+                {
+                    label: "Responder",
+                    value: "Responder",
+                    color: "white",
+                },
+                {
+                    label: "Regular User",
+                    value: "Regular User",
+                    color: "white",
+                },
+                {
+                    label: "Volunteer",
+                    value: "Volunteer",
+                    color: "white",
+                },
+            ]
+        };
+    }
+
+    userType = data => {
+        this.setState({ data });
+
+        let selectedButton = this.state.data.find(e => e.selected == true);
+        selectedButton = selectedButton
+            ? selectedButton.value
+            : this.state.data[0].label;
+        this.setState({ user_type: selectedButton });
+
+    };
+
+    createUserAccount() {
+
+        var email = this.state.email;
+        var password = this.state.password;
+        const auth = app.auth();
+        const promise = auth.createUserWithEmailAndPassword(email.trim(), password.trim());
+
+        promise.then(user => {
+            console.log('account created');
+            let app = db.ref('users/' + user.user.uid);
+
+            app.update({
+                email: this.state.email,
+                password: this.state.password,
+                firstName: this.state.firstName,
+                lastName: this.state.lastName,
+                contactNumber: this.state.contactNumber,
+                isMobile: true,
+                user_type: this.state.user_type,
+            });
+
+        });
+        promise.catch(e => {
+            var err = e.message;
+            console.log(err);
+        })
+        console.log("loog", this.state.email, this.state.password);
+    };
+
+
     render() {
         return (
             <View style={styles.container}>
@@ -17,7 +93,7 @@ class Register extends Component {
                     placeholderTextColor="#ffffff"
                     selectionColor="#fff"
                     keyboardType="email-address"
-                // onSubmitEditing={() => this.fi.focus()}
+                    onChangeText={(firstName) => this.setState({ firstName })}
                 />
                 <TextInput style={styles.inputBox}
                     underlineColorAndroid='rgba(0,0,0,0)'
@@ -25,7 +101,7 @@ class Register extends Component {
                     placeholderTextColor="#ffffff"
                     selectionColor="#fff"
                     keyboardType="email-address"
-                // ref={(input) => this.password = input}
+                    onChangeText={(lastName) => this.setState({ lastName })}
                 />
                 <TextInput style={styles.inputBox}
                     underlineColorAndroid='rgba(0,0,0,0)'
@@ -33,7 +109,7 @@ class Register extends Component {
                     placeholderTextColor="#ffffff"
                     selectionColor="#fff"
                     keyboardType="email-address"
-                // onSubmitEditing={() => this.password.focus()}
+                    onChangeText={(email) => this.setState({ email })}
                 />
                 <TextInput style={styles.inputBox}
                     underlineColorAndroid='rgba(0,0,0,0)'
@@ -41,23 +117,18 @@ class Register extends Component {
                     placeholderTextColor="#ffffff"
                     selectionColor="#fff"
                     keyboardType="email-address"
-                // ref={(input) => this.password = input}
+                    onChangeText={(contactNumber) => this.setState({ contactNumber })}
                 />
                 <TextInput style={styles.inputBox}
                     underlineColorAndroid='rgba(0,0,0,0)'
                     placeholder="Password"
                     secureTextEntry={true}
                     placeholderTextColor="#ffffff"
-                // ref={(input) => this.password = input}
+                    onChangeText={(password) => this.setState({ password })}
                 />
-                {/* <TextInput style={styles.inputBox}
-                    underlineColorAndroid='rgba(0,0,0,0)'
-                    placeholder="Re-type Password"
-                    secureTextEntry={true}
-                    placeholderTextColor="#ffffff"
-                // ref={(input) => this.password = input}
-                /> */}
-                <TouchableOpacity style={styles.button}>
+                <RadioGroup radioButtons={this.state.data} onPress={this.userType} />
+                <TouchableOpacity style={styles.button}
+                    onPress={this.createUserAccount.bind(this)}>
                     <Text style={styles.buttonText}>
                         Register
                     </Text>

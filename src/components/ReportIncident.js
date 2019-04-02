@@ -38,8 +38,10 @@ export default class ReportIncident extends Component {
       userType: '',
       incidentType: "",
       incidentLocation: "",
+      firstName: "",
+      lastName: "",
       user: null,
-      unResponded: true,
+      unresponded: true,
       isResponding: false,
       isSettled: false,
       incidentPhoto: '',
@@ -120,38 +122,30 @@ export default class ReportIncident extends Component {
           longitude: position.coords.longitude
         });
 
-        var user1 = db.ref(`users/${this.state.userId}/`);
-        var userKey = '';
+
         var userType = '';
+        var firstName = '';
 
-        user1.on('value', function (snapshot) {
-          const data = snapshot.val() || null;
-          console.log("data", data);
-
-          if (data) {
-            userKey = Object.keys(data)[0];
-          }
-        })
-        this.setState({ userKey });
-
-        var user2 = db.ref(`users/${this.state.userId}/${this.state.userKey}`);
+        console.log("HI", this.state.userId);
+        var user2 = db.ref(`users/${this.state.userId}/`);
         user2.on('value', function (snapshot) {
           const data2 = snapshot.val() || null;
           console.log("data2", data2);
 
           if (data2) {
             userType = data2.user_type;
+            firstName = data2.firstName;
+            lastName = data2.lastName;
           }
         })
-        this.setState({ userType });
-        console.log("USER TYPE", this.state.userType)
+        this.setState({ userType, firstName });
+        console.log("USER TYPE", this.state.userType, this.state.firstName)
 
-        db.ref(`mobileUsers/${this.state.userType}/${this.state.userKey}`).update({
+        db.ref(`mobileUsers/${this.state.userType}/${this.state.userId}`).update({
           coordinates: {
             lng: this.state.longitude,
             lat: this.state.latitude
           },
-          uid: this.state.userId,
         });
 
       },
@@ -232,6 +226,7 @@ export default class ReportIncident extends Component {
     //   console.log("mam", this.props.userId)
     //   console.log("ser", user)
     // })
+
     var coords = this.state.pointCoords;
     var coords2 = this.state.pointCoords[coords.length - 1];
     var coordLat = coords2.latitude;
@@ -239,11 +234,11 @@ export default class ReportIncident extends Component {
     db.ref("/incidents").push({
       incidentType: this.state.incidentType,
       incidentLocation: this.state.incidentLocation,
-      unResponded: true,
+      unresponded: true,
       isResponding: false,
       isSettled: false,
       incidentPhoto: '',
-      reportedBy: this.props.userId,
+      reportedBy: this.state.firstName + " " + this.state.lastName,
       timeReceive: '',
       timeResponded: '',
       responderResponding: '',
@@ -272,7 +267,7 @@ export default class ReportIncident extends Component {
           onPress: () => console.log("Cancel Pressed"),
           style: "cancel"
         },
-        { text: "OK", onPress: () => console.log("Cancel Pressed") }
+        { text: "OK", onPress: () => console.log("Ok Button") }
       ],
       { cancelable: false }
     );

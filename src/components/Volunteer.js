@@ -76,7 +76,6 @@ export default class Volunteer extends Component {
                         lng: this.state.longitude,
                         lat: this.state.latitude
                     },
-                    uid: this.state.userId,
                 });
 
             },
