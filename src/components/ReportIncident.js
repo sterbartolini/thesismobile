@@ -20,17 +20,12 @@ import apiKey from "../config/apiKey";
 import _ from "lodash";
 import Login from '../components/Login';
 
-import db, { app } from '../config/fire';
-// import UserMap from '../components/Map';
+import db, { app, auth, provier } from '../config/fire';
 
 import { Actions } from "react-native-router-flux";
-
-
 import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from "react-native-maps";
 
 import PolyLine from "@mapbox/polyline";
-
-// import { Actions } from 'react-native-router-flux';
 
 var screen = Dimensions.get("window");
 
@@ -39,8 +34,11 @@ export default class ReportIncident extends Component {
     super(props);
     this.state = {
       isModalVisible: false,
+      userKey: "",
+      userType: '',
       incidentType: "",
       incidentLocation: "",
+      user: null,
       unResponded: true,
       isResponding: false,
       isSettled: false,
@@ -50,7 +48,8 @@ export default class ReportIncident extends Component {
       timeResponded: '',
       responderResponding: '',
       volunteerResponding: '',
-      userId: "",
+      userId: '',
+      // userID: '',
       coordinates: {
         lng: null,
         lat: null
@@ -93,13 +92,14 @@ export default class ReportIncident extends Component {
       if (user) {
         this.setState({
           user,
-          userID: user.uid,
-          userType: user_type
+          userId: user.uid,
         });
       } else {
         this.setState({ user: null });
       }
     });
+
+
   }
 
   Volunteer() {
@@ -108,27 +108,52 @@ export default class ReportIncident extends Component {
   }
 
   componentDidMount() {
+    this.authListener();
+
+
+
     this.watchId = navigator.geolocation.watchPosition(
+
       position => {
         this.setState({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude
         });
 
-        // db.ref("/userLocation")
-        //   .child("coordinates")
-        //   .set({
-        //     coordinates: {
-        //       longitude: this.state.longitude,
-        //       latitude: this.state.latitude
-        //     }
-        //   });
-        db.ref("mobileUsers/responders/-LayVpNJA1x6MkRnq3zL").update({
+        var user1 = db.ref(`users/${this.state.userId}/`);
+        var userKey = '';
+        var userType = '';
+
+        user1.on('value', function (snapshot) {
+          const data = snapshot.val() || null;
+          console.log("data", data);
+
+          if (data) {
+            userKey = Object.keys(data)[0];
+          }
+        })
+        this.setState({ userKey });
+
+        var user2 = db.ref(`users/${this.state.userId}/${this.state.userKey}`);
+        user2.on('value', function (snapshot) {
+          const data2 = snapshot.val() || null;
+          console.log("data2", data2);
+
+          if (data2) {
+            userType = data2.user_type;
+          }
+        })
+        this.setState({ userType });
+        console.log("USER TYPE", this.state.userType)
+
+        db.ref(`mobileUsers/${this.state.userType}/${this.state.userKey}`).update({
           coordinates: {
             lng: this.state.longitude,
             lat: this.state.latitude
-          }
+          },
+          uid: this.state.userId,
         });
+
       },
       error => this.setState({ error: error.message }),
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
@@ -254,6 +279,7 @@ export default class ReportIncident extends Component {
   };
 
   render() {
+
     let marker = null;
     let len = this.state.pointCoords;
     if (len.length > 1) {
@@ -290,7 +316,6 @@ export default class ReportIncident extends Component {
 
     return (
       <View style={styles.container}>
-        {console.log("data", this.state.data)}
         <MapView
           ref={map => {
             this.map = map;
@@ -314,7 +339,19 @@ export default class ReportIncident extends Component {
         </MapView>
         <TouchableOpacity
           style={{
-            top: screen.height - 120,
+            top: screen.height - 650,
+            paddingLeft: 100
+          }}
+          onPress={() => this.signOutUser()}
+        >
+          <Image
+            style={{ width: 65, height: 65 }}
+            source={require("../images/logout.png")}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            top: screen.height - 180,
             paddingLeft: 20,
             paddingBottom: 30
           }}

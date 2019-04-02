@@ -4,19 +4,12 @@ import Modal from 'react-native-modal';
 import Button from 'react-native-button';
 import 'babel-polyfill';
 import 'es6-symbol';
-import fire from '../config/fire';
-import RadioGroup from 'react-native-radio-buttons-group';
 import apiKey from '../config/apiKey';
 import _ from 'lodash';
 
-// import UserMap from '../components/Map';
-
+import db, { app, auth, provier } from '../config/fire';
 import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
-
 import PolyLine from '@mapbox/polyline';
-
-// import { Actions } from 'react-native-router-flux';
-
 
 
 var screen = Dimensions.get('window');
@@ -62,24 +55,75 @@ export default class Responder extends Component {
 
 
 
-    componentDidMount() {
 
+    authListener() {
+        app.auth().onAuthStateChanged((user) => {
+            if (user) {
+                this.setState({
+                    user,
+                    userId: user.uid,
+                });
+            } else {
+                this.setState({ user: null });
+            }
+        });
+
+
+    }
+
+    componentDidMount() {
+        this.authListener();
         this.watchId = navigator.geolocation.watchPosition(
             position => {
                 this.setState({
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude
                 });
+
+                var user1 = db.ref(`users/${this.state.userId}/`);
+                var userKey = '';
+                var userType = '';
+
+                user1.on('value', function (snapshot) {
+                    const data = snapshot.val() || null;
+                    console.log("data", data);
+
+                    if (data) {
+                        userKey = Object.keys(data)[0];
+                    }
+                })
+                this.setState({ userKey });
+
+                var user2 = db.ref(`users/${this.state.userId}/${this.state.userKey}`);
+                user2.on('value', function (snapshot) {
+                    const data2 = snapshot.val() || null;
+                    console.log("data2", data2);
+
+                    if (data2) {
+                        userType = data2.user_type;
+                    }
+                })
+                this.setState({ userType });
+                console.log("USER TYPE", this.state.userType)
+
+                db.ref(`mobileUsers/${this.state.userType}/${this.state.userKey}`).update({
+                    coordinates: {
+                        lng: this.state.longitude,
+                        lat: this.state.latitude
+                    },
+                    uid: this.state.userId,
+                });
+
             },
             error => this.setState({ error: error.message }),
             { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
         );
-
     }
 
     componentWillUnmount() {
         navigator.geolocation.clearWatch(this.watchId);
     }
+
 
     async requestVolunteer() {
         this.setState({

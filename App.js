@@ -1,17 +1,6 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow
- * @lint-ignore-every XPLATJSCOPYRIGHT1
- */
-
 import React, { Component } from "react";
 import { Platform, StyleSheet, Text, View, StatusBar } from "react-native";
 import Login from "./src/components/Login";
-import Register from "./src/components/Register";
-import Map from "./src/components/Map";
 import ReportIncident from "./src/components/ReportIncident";
 import "babel-polyfill";
 import "es6-symbol";
@@ -46,7 +35,6 @@ export default class App extends Component {
     app.auth().onAuthStateChanged(user => {
       if (user) {
         this.setState({ user, userId: user.uid });
-        console.log("naksud ka diri?", user, user.uid);
       } else {
         this.setState({ user: null });
       }
@@ -54,16 +42,12 @@ export default class App extends Component {
   }
 
   render() {
-
     return (
       <View style={styles.container}>
         <StatusBar backgroundColor="#1c313a" barStyle="light-content" />
-        {console.log("uid", this.state.userId)}
-        {/* <Login /> */}
-        {/* <Register /> */}
+        {/* <Routes/> */}
         {this.state.user ? <ReportIncident userId={this.state.userId} /> : <Login />}
-        {/* <Map />
-        <ReportIncident /> */}
+
       </View>
     );
   }
