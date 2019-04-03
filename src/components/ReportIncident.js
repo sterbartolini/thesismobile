@@ -364,6 +364,25 @@ export default class ReportIncident extends Component {
             value={this.state.incidentLocation}
           />
           {locationPredictions}
+
+          <Button
+            style={{ fontSize: 18, color: "white" }}
+            //onPress={}
+            // onPress={this._toggleModal}
+            containerStyle={{
+              padding: 8,
+              marginLeft: 70,
+              marginRight: 70,
+              height: 40,
+              borderRadius: 6,
+              backgroundColor: "mediumseagreen",
+              marginTop: 20
+            }}
+          >
+      <Text style={{ alignContent: "center", color: "white" }}>
+              Take Photo
+            </Text>
+          </Button>
           <Button
             style={{ fontSize: 18, color: "white" }}
             onPress={this.submitIncidentHandler}
