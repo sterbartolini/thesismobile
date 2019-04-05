@@ -41,7 +41,7 @@ export default class ReportIncident extends Component {
       isModalVisible: false,
       incidentType: "",
       incidentLocation: "",
-      unResponded: true,
+      unresponded: true,
       isResponding: false,
       isSettled: false,
       incidentPhoto: '',
@@ -214,7 +214,7 @@ export default class ReportIncident extends Component {
     db.ref("/incidents").push({
       incidentType: this.state.incidentType,
       incidentLocation: this.state.incidentLocation,
-      unResponded: true,
+      unresponded: true,
       isResponding: false,
       isSettled: false,
       incidentPhoto: '',
