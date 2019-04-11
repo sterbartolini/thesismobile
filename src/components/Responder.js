@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
+import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert, ActivityIndicator } from "react-native";
 import Modal from 'react-native-modal';
 import Button from 'react-native-button';
 import 'babel-polyfill';
@@ -9,14 +9,9 @@ import app from '../config/fire';
 import apiKey from '../config/apiKey';
 import _ from 'lodash';
 
-// import UserMap from '../components/Map';
-
+import db, { app, auth, provier } from '../config/fire';
 import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
-
 import PolyLine from '@mapbox/polyline';
-
-// import { Actions } from 'react-native-router-flux';
-
 
 
 var screen = Dimensions.get('window');
@@ -54,7 +49,10 @@ export default class Responder extends Component {
             longitude: null,
             locationPredictions: [],
         };
-
+        this.onChangeDestinationDebounced = _.debounce(
+            this.onChangeDestination,
+            1000
+        );
     }
 
     signOutUser() {
@@ -183,7 +181,6 @@ export default class Responder extends Component {
 
         })
     }
-
     componentDidMount() {
 
         this.authListener();
@@ -247,6 +244,30 @@ export default class Responder extends Component {
         }
     }
 
+    async onChangeDestination(incidentLocation) {
+        this.setState({ incidentLocation });
+        const apiUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?key=${apiKey}&input={${incidentLocation}}&location=${
+            this.state.latitude
+            },${this.state.longitude}&radius=2000`;
+        const result = await fetch(apiUrl);
+        const jsonResult = await result.json();
+        this.setState({
+            locationPredictions: jsonResult.predictions
+        });
+        console.log(jsonResult);
+    }
+
+    // pressedPrediction = (prediction) => {
+    //     console.log(prediction);
+    //     Keyboard.dismiss();
+    //     this.setState({
+    //         locationPredictions: [],
+    //         incidentLocation: prediction.description
+    //     });
+    //     Keyboard;
+    //     <UserMap destinationID={prediction.place_id} />
+    //     console.log("ngano", prediction.place_id);
+    // }
 
     _toggleModal = () => {
         this.setState({ isModalVisible: !this.state.isModalVisible });
@@ -256,18 +277,16 @@ export default class Responder extends Component {
     render() {
 
         let marker = null;
-
-        if (this.state.pointCoords.length > 1) {
+        let len = this.state.pointCoords;
+        if (len.length > 1) {
             marker = (
                 <Marker
-                    coordinate={this.state.pointCoords[this.state.pointCoords.length - 1]}
+                    coordinate={this.state.pointCoords[len.length - 1]}
                 />
             );
         }
 
-
         if (this.state.latitude === null) return null;
-
         return (
             <View style={styles.container}>
                 <MapView
@@ -386,16 +405,19 @@ const styles = StyleSheet.create({
         alignSelf: 'center'
     },
     button: {
-        height: 45,
-        flexDirection: 'row',
-        backgroundColor: 'white',
-        borderColor: 'white',
-        borderWidth: 1,
-        borderRadius: 8,
-        marginBottom: 10,
-        marginTop: 10,
-        alignSelf: 'stretch',
-        justifyContent: 'center'
+        width: 300,
+        backgroundColor: '#1c313a',
+        borderRadius: 25,
+        marginVertical: 10,
+        paddingVertical: 13,
+        marginTop: "auto",
+        marginLeft: 50,
+    },
+    buttonText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#ffffff',
+        textAlign: 'center'
     },
     valueText: {
         fontSize: 18,

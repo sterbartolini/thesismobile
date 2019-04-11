@@ -239,17 +239,9 @@ import app from '../config/fire';
 import apiKey from '../config/apiKey';
 import _ from 'lodash';
 
-// import UserMap from '../components/Map';
-
 import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
 
 import PolyLine from '@mapbox/polyline';
-
-// import { Actions } from 'react-native-router-flux';
-
-
-
-var screen = Dimensions.get('window');
 
 export default class Volunteer extends Component {
     constructor(props) {
@@ -418,8 +410,8 @@ export default class Volunteer extends Component {
     }
 
     componentDidMount() {
-
         this.authListener();
+
         this.incidentListener();
 
 
@@ -444,6 +436,9 @@ export default class Volunteer extends Component {
         );
     }
 
+    componentWillUnmount() {
+        navigator.geolocation.clearWatch(this.watchId);
+    }
 
     componentWillUnmount() {
         this._isMounted = false;

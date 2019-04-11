@@ -20,7 +20,7 @@ import Routes from './src/Routes';
 YellowBox.ignoreWarnings(['Setting a timer']);
 const _console = _.clone(console);
 console.warn = message => {
-  if (message.indexOf('Setting a timer') <= -1) {
+  if (message.indexOf("Setting a timer") <= -1) {
     _console.warn(message);
   }
 };
@@ -116,9 +116,9 @@ export default class App extends Component {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 1
 
     // alignItems: 'center',
     // backgroundColor: '#455a64',
-  },
+  }
 });

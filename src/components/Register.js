@@ -9,7 +9,6 @@ import app, { db } from '../config/fire';
 import Logo from './Logo';
 
 
-
 class Register extends Component {
     constructor(props) {
         super(props);

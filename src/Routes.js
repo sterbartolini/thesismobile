@@ -3,7 +3,6 @@ import { Router, Stack, Scene } from 'react-native-router-flux';
 
 import Login from './components/Login';
 import Register from './components/Register';
-import UserMap from './components/Map';
 import Volunteer from './components/Volunteer';
 import ReportIncident from './components/ReportIncident';
 import RegularUser from './components/RegularUser';
