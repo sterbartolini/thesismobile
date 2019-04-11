@@ -4,24 +4,21 @@ import Modal from 'react-native-modal';
 import Button from 'react-native-button';
 import 'babel-polyfill';
 import 'es6-symbol';
-
-import app from '../config/fire';
+import RadioGroup from 'react-native-radio-buttons-group';
 import apiKey from '../config/apiKey';
 import _ from 'lodash';
 
-// import UserMap from '../components/Map';
-
+import app from '../config/fire';
 import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
 
 import PolyLine from '@mapbox/polyline';
-
-// import { Actions } from 'react-native-router-flux';
 
 
 
 var screen = Dimensions.get('window');
 
-export default class Responder extends Component {
+export default class ReportIncident extends Component {
+    _isMounted = false;
     constructor(props) {
         super(props);
         this.state = {
@@ -53,22 +50,31 @@ export default class Responder extends Component {
             latitude: null,
             longitude: null,
             locationPredictions: [],
+            data: [
+                {
+                    label: "Vehicular Accident",
+                    value: "Vehicular Accident"
+                },
+                {
+                    label: "Physical Injury",
+                    value: "Physical Injury"
+                }
+            ]
         };
+        this.onChangeDestinationDebounced = _.debounce(
+            this.onChangeDestination,
+            1000
+        );
+    }
+    // update state
+    onPress = data => {
+        this.setState({ data });
+
+        let selectedButton = this.state.data.find(e => e.selected == true);
+        selectedButton = selectedButton ? selectedButton.value : this.state.data[0].label;
+        this.setState({ incidentType: selectedButton });
 
     }
-
-    signOutUser() {
-        app.auth().signOut().then(function () {
-            // Sign-out successful.
-            console.log("SUCCESFULL LOG OUT");
-
-        }).catch(function (error) {
-            // An error happened.
-            console.log(error)
-        });
-
-    }
-
 
     authListener() {
         this._isMounted = true;
@@ -105,89 +111,9 @@ export default class Responder extends Component {
 
     }
 
-    changeIncidentState = () => {
-        var hours = new Date().getHours(); //Current Hours
-        var min = new Date().getMinutes(); //Current Minutes
-        var sec = new Date().getSeconds(); //Current Seconds
-
-
-        console.log("NIABOT KA DIRI DAPIT?", this.state.firstName, this.state.userId);
-        app.database().ref(`incidents/${this.state.incidentID}`).update({
-            isResponding: true,
-            unresponded: false,
-            responderResponding: this.state.userId,
-            timeResponded: hours + ':' + min + ':' + sec,
-        });
-
-        this.getRouteDirection();
-    }
-
-    incidentListener = () => {
-
-        var responderListen = app.database().ref(`mobileUsers/Responder`)
-        var that = this;
-        var incidentDetails = '';
-        var incidentID = '';
-        responderListen.on('value', (snapshot) => {
-            snapshot.forEach(function (childSnapshot) {
-                var data = childSnapshot.key;
-                console.log("data", data)
-                var childData = childSnapshot.val();
-                incidentID = childData.incidentID;
-                var data2;
-                if (incidentID) {
-                    console.log("WLECOME", incidentID);
-                    var userIncidentId = app.database().ref(`incidents/${incidentID}`)
-
-                    userIncidentId.once('value', function (snapshot) {
-                        incidentDetails = snapshot.val() || null;
-                        console.log("incident Detials", incidentDetails)
-                        var incidentType = incidentDetails.incidentType;
-                        var incidentLocation = incidentDetails.incidentLocation;
-                        Alert.alert(
-                            "INCIDENT DETAILS ",
-                            `Incident Type: ${incidentType}
-                         Incident Location: ${incidentLocation}
-                                                 `
-                            ,
-                            [
-                                { text: "OK", onPress: () => { that.changeIncidentState() } }
-                            ],
-                            { cancelable: false }
-                        );
-
-                    })
-
-                }
-                console.log("NACHANGE", data2, data, childData);
-            })
-
-            this.setState({ incidentID })
-            console.log("hithereeeeee", this.state.incidentID);
-
-
-            var userIncidentId = app.database().ref(`incidents/${this.state.incidentID}`);
-            var incidentType = "";
-            var incidentLocation = "";
-            var incidentPhoto = "";
-            userIncidentId.on('value', function (snapshot) {
-                incidentDetails = snapshot.val() || null;
-                console.log("incident 222222222222222222", incidentDetails)
-                incidentType = incidentDetails.incidentType;
-                incidentLocation = incidentDetails.incidentLocation;
-                incidentPhoto = incidentDetails.incidentPhoto;
-            })
-            this.setState({ incidentType, incidentLocation, incidentPhoto });
-            // this.incidentIsResponded();
-            console.log("incident LOCATION AND TYPE", this.state.incidentType, this.state.incidentLocation)
-
-        })
-    }
-
     componentDidMount() {
 
         this.authListener();
-        this.incidentListener();
 
 
         this.watchId = navigator.geolocation.watchPosition(
@@ -198,7 +124,7 @@ export default class Responder extends Component {
                     longitude: position.coords.longitude
                 });
 
-                app.database().ref(`mobileUsers/Responder/${this.state.userId}`).update({
+                app.database().ref(`mobileUsers/Regular User/${this.state.userId}`).update({
                     coordinates: {
                         lng: this.state.longitude,
                         lat: this.state.latitude
@@ -218,9 +144,8 @@ export default class Responder extends Component {
     }
 
 
-    async getRouteDirection() {
-        destinationPlaceId = this.state.incidentPhoto;
-        destinationName = this.state.incidentLocation;
+
+    async getRouteDirection(destinationPlaceId, destinationName) {
         try {
             const response = await fetch(
                 `https://maps.googleapis.com/maps/api/directions/json?origin=${
@@ -239,6 +164,7 @@ export default class Responder extends Component {
                 pointCoords,
                 locationPredictions: [],
                 incidentLocation: destinationName,
+                incidentPhoto: destinationPlaceId,
             });
             Keyboard.dismiss();
             this.map.fitToCoordinates(pointCoords);
@@ -247,11 +173,106 @@ export default class Responder extends Component {
         }
     }
 
+    async onChangeDestination(incidentLocation) {
+        this.setState({ incidentLocation });
+        const apiUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?key=${apiKey}&input={${incidentLocation}}&location=${
+            this.state.latitude
+            },${this.state.longitude}&radius=2000`;
+        const result = await fetch(apiUrl);
+        const jsonResult = await result.json();
+        this.setState({
+            locationPredictions: jsonResult.predictions
+        });
+        console.log(jsonResult);
+    }
+
+    // pressedPrediction = (prediction) => {
+    //     console.log(prediction);
+    //     Keyboard.dismiss();
+    //     this.setState({
+    //         locationPredictions: [],
+    //         incidentLocation: prediction.description
+    //     });
+    //     Keyboard;
+    //     <UserMap destinationID={prediction.place_id} />
+    //     console.log("ngano", prediction.place_id);
+    // }
 
     _toggleModal = () => {
         this.setState({ isModalVisible: !this.state.isModalVisible });
     }
 
+    submitIncidentHandler = () => {
+        var hours = new Date().getHours(); //Current Hours
+        var min = new Date().getMinutes(); //Current Minutes
+        var sec = new Date().getSeconds(); //Current Seconds
+
+
+        var coords = this.state.pointCoords;
+        var coords2 = this.state.pointCoords[coords.length - 1];
+        var coordLat = coords2.latitude;
+        var coordLng = coords2.longitude;
+        app.database().ref("/incidents").push({
+            incidentType: this.state.incidentType,
+            incidentLocation: this.state.incidentLocation,
+            unresponded: true,
+            isResponding: false,
+            isSettled: false,
+            incidentPhoto: this.state.incidentPhoto,
+            reportedBy: this.state.userId,
+            timeReceive: hours + ':' + min + ':' + sec,
+            timeResponded: '',
+            responderResponding: '',
+            volunteerResponding: '',
+            coordinates: {
+                lat: coordLat,
+                lng: coordLng
+            },
+        });
+        this.setState({
+            incidentType: '',
+            incidentLocation: '',
+            unresponded: null,
+            isResponding: null,
+            isSettled: null,
+            incidentPhoto: '',
+            reportedBy: '',
+            timeReceive: '',
+            timeResponded: '',
+            responderResponding: '',
+            volunteerResponding: '',
+            coordinates: {
+                lat: null,
+                lng: null
+            },
+        });
+        console.log(this.state.incidentsList);
+        Alert.alert(
+            'Attention: ',
+            'Report has been sent',
+            [
+                {
+                    text: 'Cancel',
+                    onPress: () => console.log('Cancel Pressed'),
+                    style: 'cancel',
+                },
+                { text: 'OK', onPress: () => console.log('Ok pressed') },
+            ],
+            { cancelable: false },
+        );
+    }
+
+    signOutUser() {
+        app.auth().signOut().then(function () {
+            // Sign-out successful.
+            console.log("SUCCESFULL LOG OUT");
+
+        }).catch(function (error) {
+            // An error happened.
+            console.log(error)
+        });
+
+    }
 
     render() {
 
@@ -265,8 +286,28 @@ export default class Responder extends Component {
             );
         }
 
-
         if (this.state.latitude === null) return null;
+
+        const locationPredictions = this.state.locationPredictions.map(
+            prediction => (
+                <TouchableHighlight
+                    key={prediction.id}
+                    onPress={() =>
+                        // this.pressedPrediction(prediction)
+                        this.getRouteDirection(
+                            prediction.place_id,
+                            prediction.description
+                        )
+                    }
+                >
+
+                    <Text style={styles.locationSuggestion}>
+                        {prediction.description}
+                    </Text>
+                </TouchableHighlight>
+            )
+        );
+
 
         return (
             <View style={styles.container}>
@@ -290,6 +331,7 @@ export default class Responder extends Component {
                     />
                     {marker}
                 </MapView>
+
                 <TouchableOpacity
                     style={{
                         top: screen.height - 650,
@@ -330,17 +372,35 @@ export default class Responder extends Component {
                         textAlign: 'center',
                         marginTop: 20,
                         marginBottom: 15
-                    }}> INCIDENT DESCRIPTION
+                    }}>INPUT INCIDENT
                     </Text>
-                    <Text style={{
-                        fontSize: 20,
-                        textAlign: 'center',
-                        marginTop: 20,
-                        marginBottom: 15
-                    }}>
-                        Incident Type: {this.state.incidentType}
-                        Incident Location: {this.state.incidentLocation}
-                    </Text>
+                    <RadioGroup radioButtons={this.state.data} onPress={this.onPress} />
+                    <TextInput
+                        placeholder="Enter location.."
+                        style={styles.destinationInput}
+                        onChangeText={incidentLocation => {
+                            this.setState({ incidentLocation });
+                            this.onChangeDestinationDebounced(incidentLocation);
+                        }}
+                        value={this.state.incidentLocation}
+
+                    />
+                    {locationPredictions}
+                    <Button
+                        style={{ fontSize: 18, color: 'white' }}
+                        onPress={this.submitIncidentHandler}
+                        containerStyle={{
+                            padding: 8,
+                            marginLeft: 70,
+                            marginRight: 70,
+                            height: 40,
+                            borderRadius: 6,
+                            backgroundColor: 'mediumseagreen',
+                            marginTop: 20,
+                        }}
+                    >
+                        <Text style={{ justifyContent: 'center', color: 'white' }} >Submit Incident</Text>
+                    </Button>
                 </Modal>
             </View>
         );

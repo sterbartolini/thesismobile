@@ -1,17 +1,18 @@
+
 import React, { Component } from 'react';
 import {
     StyleSheet, Text, View, TextInput,
     TouchableOpacity
 } from 'react-native';
-
+import app from '../config/fire';
 
 
 import { Actions } from 'react-native-router-flux';
 
 import Logo from './Logo';
-// import * as firebase from '../config/fire';
 
-import app from '../config/fire';
+
+// import db, { app } from '../config/fire';
 
 class Login extends Component {
     constructor(props) {
@@ -19,12 +20,25 @@ class Login extends Component {
         this.state = {
             email: '',
             password: '',
+            user: {},
         }
     }
 
 
+    loginUserAccount() {
+        console.log("loog", this.state.email, this.state.password);
+        app.auth()
+            .signInWithEmailAndPassword(this.state.email.trim(), this.state.password)
+            .catch(error => {
+                console.log(error);
+            });
+        console.log("Login");
+
+
+    };
+
     signUp() {
-        Actions.userMap()
+        Actions.signup()
     }
 
     Volunteer() {
@@ -36,18 +50,10 @@ class Login extends Component {
     }
 
     userMaps() {
-        // app.auth().signInWithEmailAndPassword(this.state.email, this.state.password).then((u) => {
-        //     // Actions.userMap()
-        //     console.log("LOGIN", u)
-        // }).catch((error) => {
-        //     console.log(error);
-        // })
-        Actions.userMap()
+
+        Actions.RegularUser()
     }
 
-    handleChange = (e) => {
-        this.setState({ [e.target.name]: e.target.value });
-    }
 
     render() {
         return (
@@ -59,32 +65,20 @@ class Login extends Component {
                     placeholderTextColor="#ffffff"
                     selectionColor="#fff"
                     keyboardType="email-address"
-                    // onSubmitEditing={() => this.password.focus()}
-                    // value={this.state.email}
-                    onChange={this.handleChange}
+                    onChangeText={(email) => this.setState({ email })}
                 />
                 <TextInput style={styles.inputBox}
                     underlineColorAndroid='rgba(0,0,0,0)'
                     placeholder="Password"
                     secureTextEntry={true}
                     placeholderTextColor="#ffffff"
-                    // ref={(input) => this.password = input}
-                    // value={this.state.password}
-                    onChange={this.handleChange}
+                    onChangeText={(password) => this.setState({ password })}
                 />
-                <TouchableOpacity style={styles.button} onPress={this.signUp}>
+                <TouchableOpacity style={styles.button}
+                    onPress={this.loginUserAccount.bind(this)}
+                >
                     <Text style={styles.buttonText}>
                         Login
-              </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={this.Responder}>
-                    <Text style={styles.buttonText}>
-                        Responder
-              </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={this.Volunteer}>
-                    <Text style={styles.buttonText}>
-                        Volunteer
               </Text>
                 </TouchableOpacity>
                 <View style={styles.signupTextCont}>

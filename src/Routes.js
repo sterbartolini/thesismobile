@@ -6,15 +6,16 @@ import Register from './components/Register';
 import UserMap from './components/Map';
 import Volunteer from './components/Volunteer';
 import ReportIncident from './components/ReportIncident';
+import RegularUser from './components/RegularUser';
 import Responder from './components/Responder';
 export default class Routes extends Component {
     render() {
         return (
             <Router>
-                <Stack key="root" hideNavBar={true}>
+                <Stack key="root" hideNavBar={false}>
                     <Scene key="login" component={Login} title="Login" initial={true} />
                     <Scene key="signup" component={Register} title="Register" />
-                    <Scene key="userMap" component={ReportIncident} title="maps" />
+                    <Scene key="RegularUser" component={RegularUser} title="RegularUser" />
                     <Scene key="Volunteer" component={Volunteer} title="Volunteer" />
                     <Scene key="Responder" component={Responder} title="Responder" />
                 </Stack>
