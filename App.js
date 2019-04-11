@@ -5,7 +5,6 @@ import {
 } from 'react-native';
 import Login from './src/components/Login';
 import Register from './src/components/Register';
-import Map from './src/components/Map';
 import ReportIncident from './src/components/ReportIncident';
 import 'babel-polyfill';
 import 'es6-symbol'

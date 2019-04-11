@@ -9,7 +9,6 @@ import app from '../config/fire';
 import apiKey from '../config/apiKey';
 import _ from 'lodash';
 
-import db, { app, auth, provier } from '../config/fire';
 import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
 import PolyLine from '@mapbox/polyline';
 
