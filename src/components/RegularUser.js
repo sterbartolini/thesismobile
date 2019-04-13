@@ -40,7 +40,10 @@ export default class ReportIncident extends Component {
             responderResponding: '',
             volunteerResponding: '',
             userId: '',
-            // userID: '',
+            destinationPlaceId: '',
+            responderCoords: '',
+            isRequestingResponders: false,
+            isRequestingVolunteers: false,
             coordinates: {
                 lng: null,
                 lat: null
@@ -115,6 +118,51 @@ export default class ReportIncident extends Component {
 
         this.authListener();
 
+        // var responderListener = app.database().ref(`incidents/${this.state.incidentID}`);
+        // var responderResponding = "";
+        // responderListener.on('value', function (snapshot) {
+        //     incidentDetails = snapshot.val() || null;
+        //     responderResponding = incidentDetails.responderResponding;
+        //     // responderCoords = incidentDetails.responderCoords;
+        // })
+        // this.setState({ responderResponding });
+
+        // if (responderResponding) {
+        //     var responderListen = app.database().ref(`mobileUsers/Responder/${this.state.responderResponding}`)
+        //     var responderCoords = "";
+        //     responderListen.on('value', function (snapshot) {
+        //         incidentDetails = snapshot.val() || null;
+        //         responderCoords = incidentDetails.coordinates;
+        //     })
+        //     this.setState({ responderCoords });
+
+        // }
+        var responderListen = app.database().ref(`mobileUsers/Responder`)
+        var that = this;
+        var incidentDetails = '';
+        var incidentID = '';
+        responderListen.on('value', (snapshot) => {
+            snapshot.forEach(function (childSnapshot) {
+                var data = childSnapshot.key;
+                console.log("data", data)
+                var childData = childSnapshot.val();
+                incidentID = childData.incidentID;
+            })
+
+            this.setState({ incidentID })
+            console.log("hithereeeeee", this.state.incidentID);
+
+
+            // var userIncidentId = app.database().ref(`incidents/${this.state.incidentID}`);
+            // var responderCoords = "";
+            // userIncidentId.on('value', function (snapshot) {
+            //     incidentDetails = snapshot.val() || null;
+            //     console.log("incident 222222222222222222", incidentDetails)
+            //     responderCoords = incidentDetails.responderCoords;
+            // })
+            // this.setState({ responderCoords });
+        })
+
 
         this.watchId = navigator.geolocation.watchPosition(
 
@@ -164,9 +212,11 @@ export default class ReportIncident extends Component {
                 pointCoords,
                 locationPredictions: [],
                 incidentLocation: destinationName,
+                destinationPlaceId,
                 incidentPhoto: destinationPlaceId,
             });
             Keyboard.dismiss();
+            console.log("destination place Id from regular user: ", this.state.destinationPlaceId, this.state.incidentPhoto);
             this.map.fitToCoordinates(pointCoords);
         } catch (error) {
             console.error(error);
@@ -228,6 +278,10 @@ export default class ReportIncident extends Component {
                 lat: coordLat,
                 lng: coordLng
             },
+            destinationPlaceId: this.state.destinationPlaceId,
+            isRequestingResponders: false,
+            isRequestingVolunteers: false,
+            responderCoords: '',
         });
         this.setState({
             incidentType: '',
@@ -245,6 +299,10 @@ export default class ReportIncident extends Component {
                 lat: null,
                 lng: null
             },
+            destinationPlaceId: '',
+            isRequestingResponders: false,
+            isRequestingVolunteers: false,
+            responderCoords: '',
         });
         console.log(this.state.incidentsList);
         Alert.alert(
@@ -282,6 +340,15 @@ export default class ReportIncident extends Component {
             marker = (
                 <Marker
                     coordinate={this.state.pointCoords[this.state.pointCoords.length - 1]}
+                />
+
+            );
+        }
+        var markerResponder = null;
+        if (this.state.responderCoords) {
+            markerResponder = (
+                <Marker
+                    coordinate={this.state.responderCoords}
                 />
             );
         }
@@ -330,6 +397,7 @@ export default class ReportIncident extends Component {
                         strokeColor="red"
                     />
                     {marker}
+                    {markerResponder}
                 </MapView>
 
                 <TouchableOpacity
