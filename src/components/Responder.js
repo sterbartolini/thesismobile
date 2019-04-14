@@ -21,6 +21,7 @@ export default class Responder extends Component {
         this.state = {
             isModalVisible: false,
             isIncidentReady: false,
+            destinationPlaceId: '',
             userKey: "",
             userType: '',
             incidentType: "",
@@ -120,11 +121,12 @@ export default class Responder extends Component {
             isIncidentReady: true,
             incidentLocation,
             incidentType,
+            destinationPlaceId,
         })
         // this.getRouteDirection();
 
         // console.log("NAPASAKA DIRI INCIDNET ID", incidentID);
-        this.getRouteDirection(destinationPlaceId, incidentLocation, incidentID);
+        this.getRouteDirection(destinationPlaceId, incidentLocation);
     }
 
     incidentListener = () => {
@@ -133,7 +135,7 @@ export default class Responder extends Component {
         var that = this;
         var incidentDetails = '';
         var incidentID = '';
-        responderListen.on('value', (snapshot) => {
+        responderListen.once('value', (snapshot) => {
             snapshot.forEach(function (childSnapshot) {
                 var data = childSnapshot.key;
                 console.log("data", data)
@@ -207,6 +209,7 @@ export default class Responder extends Component {
                     longitude: position.coords.longitude
                 });
 
+                this.getRouteDirection(this.state.destinationPlaceId, this.state.incidentLocation);
                 app.database().ref(`mobileUsers/Responder/${this.state.userId}`).update({
                     coordinates: {
                         lng: this.state.longitude,
@@ -220,9 +223,6 @@ export default class Responder extends Component {
         );
     }
 
-    componentWillUnmount() {
-        navigator.geolocation.clearWatch(this.watchId);
-    }
 
     componentWillUnmount() {
         this._isMounted = false;
@@ -230,7 +230,7 @@ export default class Responder extends Component {
     }
 
 
-    async getRouteDirection(destinationPlaceId, destinationName, incidentID) {
+    async getRouteDirection(destinationPlaceId, destinationName) {
         console.log("HIIII DESTINATION PLACE IS", destinationPlaceId);
         // destinationPlaceId = this.state.incidentPhoto;
         try {

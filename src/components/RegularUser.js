@@ -33,6 +33,7 @@ export default class ReportIncident extends Component {
             unresponded: true,
             isResponding: false,
             isSettled: false,
+            incidentID: '',
             incidentPhoto: '',
             reportedBy: '',
             timeReceive: '',
@@ -42,8 +43,11 @@ export default class ReportIncident extends Component {
             userId: '',
             destinationPlaceId: '',
             responderCoords: '',
+            responderLat: null,
+            responderLng: null,
             isRequestingResponders: false,
             isRequestingVolunteers: false,
+            responderRespondingID: '',
             coordinates: {
                 lng: null,
                 lat: null
@@ -117,7 +121,7 @@ export default class ReportIncident extends Component {
     componentDidMount() {
 
         this.authListener();
-
+        this.incidentState();
         // var responderListener = app.database().ref(`incidents/${this.state.incidentID}`);
         // var responderResponding = "";
         // responderListener.on('value', function (snapshot) {
@@ -137,31 +141,34 @@ export default class ReportIncident extends Component {
         //     this.setState({ responderCoords });
 
         // }
-        var responderListen = app.database().ref(`mobileUsers/Responder`)
-        var that = this;
-        var incidentDetails = '';
-        var incidentID = '';
-        responderListen.on('value', (snapshot) => {
-            snapshot.forEach(function (childSnapshot) {
-                var data = childSnapshot.key;
-                console.log("data", data)
-                var childData = childSnapshot.val();
-                incidentID = childData.incidentID;
-            })
-
-            this.setState({ incidentID })
-            console.log("hithereeeeee", this.state.incidentID);
 
 
-            // var userIncidentId = app.database().ref(`incidents/${this.state.incidentID}`);
-            // var responderCoords = "";
-            // userIncidentId.on('value', function (snapshot) {
-            //     incidentDetails = snapshot.val() || null;
-            //     console.log("incident 222222222222222222", incidentDetails)
-            //     responderCoords = incidentDetails.responderCoords;
-            // })
-            // this.setState({ responderCoords });
-        })
+        // var responderListen = app.database().ref(`mobileUsers/Regular User`)
+        // var that = this;
+        // var incidentDetails = '';
+        // var incidentID = '';
+        // responderListen.on('value', (snapshot) => {
+        //     snapshot.forEach(function (childSnapshot) {
+        //         var data = childSnapshot.key;
+        //         console.log("data", data)
+        //         var childData = childSnapshot.val();
+        //         incidentID = childData.incidentID;
+        //         that.incidentState(incidentID);
+        //     })
+
+        //     // this.setState({ incidentID })
+        //     // console.log("hithereeeeee", this.state.incidentID);
+
+
+        //     // var userIncidentId = app.database().ref(`incidents/${this.state.incidentID}`);
+        //     // var responderCoords = "";
+        //     // userIncidentId.on('value', function (snapshot) {
+        //     //     incidentDetails = snapshot.val() || null;
+        //     //     console.log("incident 222222222222222222", incidentDetails)
+        //     //     responderCoords = incidentDetails.responderCoords;
+        //     // })
+        //     // this.setState({ responderCoords });
+        // })
 
 
         this.watchId = navigator.geolocation.watchPosition(
@@ -171,7 +178,9 @@ export default class ReportIncident extends Component {
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude
                 });
-
+                if (this.state.destinationPlaceId) {
+                    this.getRouteDirection(this.state.destinationPlaceId, this.state.destinationName);
+                }
                 app.database().ref(`mobileUsers/Regular User/${this.state.userId}`).update({
                     coordinates: {
                         lng: this.state.longitude,
@@ -183,6 +192,87 @@ export default class ReportIncident extends Component {
             error => this.setState({ error: error.message }),
             { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
         );
+    }
+
+
+    incidentResponderListener = (incidentID) => {
+        console.log("naa ka diri?", incidentID)
+        console.log("hi there", this.state.incidentID);
+        var responderListen = app.database().ref(`incidents/${incidentID}`)
+        var that = this;
+        var responderRespondingID = '';
+
+
+        responderListen.once('value', function (snapshot) {
+            const data2 = snapshot.val() || null;
+            console.log("data2222222222222222", data2);
+
+            if (data2) {
+                responderRespondingID = data2.responderResponding;
+                var destinationPlaceId = data2.destinationPlaceId;
+                if (responderRespondingID) {
+                    Alert.alert(
+                        "A Responder has accepted an incident "
+                        , `${responderRespondingID}`,
+                        [
+                            { text: "Respond", onPress: () => { console.log("Hehe") } },
+                        ],
+                        { cancelable: false }
+                    );
+                    console.log("responder responding", responderRespondingID, destinationPlaceId);
+                    that.setState({ responderRespondingID, destinationPlaceId });
+                    that.responderCoordinates(responderRespondingID)
+                }
+
+            }
+
+        })
+    }
+
+    responderCoordinates = () => {
+
+        console.log("Welcome RESPONDER", this.state.responderRespondingID);
+        var userIncidentId = app.database().ref(`mobileUsers/Responder/${this.state.responderRespondingID}`)
+        var latitude = '';
+        var longitude = '';
+        var that = this;
+        userIncidentId.on('value', function (snapshot) {
+            incidentDetails = snapshot.val() || null;
+            console.log("INCIDENT DETAILSSS", incidentDetails);
+
+            latitude = incidentDetails.coordinates.lat;
+            longitude = incidentDetails.coordinates.lng;
+            console.log("LAT AND LONG OF USERS", incidentDetails.coordinates.lat);
+            that.setState({
+                responderLat: latitude,
+                responderLng: longitude,
+            })
+        })
+        // this.setState({
+        //     responderLat: latitude,
+        //     responderLng: longitude,
+        // })
+        // console.log("Responder Place:", this.state.responderLat, this.state.responderLng);
+
+    }
+
+    incidentState = () => {
+
+        var responderListen = app.database().ref(`mobileUsers/Regular User`);
+        var that = this;
+        responderListen.once('value', (snapshot) => {
+            snapshot.forEach(function (childSnapshot) {
+                var data = childSnapshot.key;
+                console.log("data", data)
+                var childData = childSnapshot.val();
+                var incidentID = childData.incidentID;
+
+                if (incidentID) {
+                    that.incidentResponderListener(incidentID)
+                    that.setState({ incidentID })
+                }
+            })
+        })
     }
 
 
@@ -213,10 +303,10 @@ export default class ReportIncident extends Component {
                 locationPredictions: [],
                 incidentLocation: destinationName,
                 destinationPlaceId,
-                incidentPhoto: destinationPlaceId,
+                // incidentPhoto: destinationPlaceId,
             });
             Keyboard.dismiss();
-            console.log("destination place Id from regular user: ", this.state.destinationPlaceId, this.state.incidentPhoto);
+            // console.log("destination place Id from regular user: ", this.state.destinationPlaceId, this.state.incidentPhoto);
             this.map.fitToCoordinates(pointCoords);
         } catch (error) {
             console.error(error);
@@ -268,7 +358,7 @@ export default class ReportIncident extends Component {
             unresponded: true,
             isResponding: false,
             isSettled: false,
-            incidentPhoto: this.state.incidentPhoto,
+            incidentPhoto: '',
             reportedBy: this.state.userId,
             timeReceive: hours + ':' + min + ':' + sec,
             timeResponded: '',
@@ -335,20 +425,30 @@ export default class ReportIncident extends Component {
     render() {
 
         let marker = null;
-
+        let point = this.state.pointCoords;
+        let point2 = point[point.length - 1];
         if (this.state.pointCoords.length > 1) {
             marker = (
                 <Marker
-                    coordinate={this.state.pointCoords[this.state.pointCoords.length - 1]}
+                    coordinate={
+                        {
+                            latitude: point2.latitude,
+                            longitude: point2.longitude,
+                        }
+                        // this.state.pointCoords[this.state.pointCoords.length - 1]
+                    }
                 />
 
             );
         }
         var markerResponder = null;
-        if (this.state.responderCoords) {
+        if (this.state.responderLat) {
             markerResponder = (
                 <Marker
-                    coordinate={this.state.responderCoords}
+                    coordinate={{
+                        latitude: this.state.responderLat,
+                        longitude: this.state.responderLng,
+                    }}
                 />
             );
         }
