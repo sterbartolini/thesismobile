@@ -2,9 +2,10 @@
 import React, { Component } from "react";
 import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
 import Modal from 'react-native-modal';
-import Button from 'react-native-button';
 import 'babel-polyfill';
 import 'es6-symbol';
+import { FloatingAction } from 'react-native-floating-action';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 import app from '../config/fire';
 import apiKey from '../config/apiKey';
@@ -131,11 +132,11 @@ export default class Responder extends Component {
 
     incidentListener = () => {
 
-        var responderListen = app.database().ref(`mobileUsers/Responder`)
+        var responderListen = app.database().ref(`mobileUsers/Responder/${this.state.userId}`)
         var that = this;
         var incidentDetails = '';
         var incidentID = '';
-        responderListen.once('value', (snapshot) => {
+        responderListen.on('value', (snapshot) => {
             snapshot.forEach(function (childSnapshot) {
                 var data = childSnapshot.key;
                 console.log("data", data)
@@ -148,13 +149,15 @@ export default class Responder extends Component {
                     var incidentType = '';
                     var incidentLocation = '';
                     var destinationPlaceId = '';
+                    var responderResponding='';
                     var incidentUserId = incidentID;
-                    userIncidentId.once('value', function (snapshot) {
+                    userIncidentId.on('value', function (snapshot) {
                         incidentDetails = snapshot.val() || null;
                         console.log("incident Detials", incidentDetails)
                         incidentType = incidentDetails.incidentType;
                         incidentLocation = incidentDetails.incidentLocation;
                         destinationPlaceId = incidentDetails.destinationPlaceId;
+                        if(responderResponding===""){
                         Alert.alert(
                             "INCIDENT DETAILS ",
                             `Incident Type: ${incidentType}
@@ -165,7 +168,7 @@ export default class Responder extends Component {
                                 { text: "Respond", onPress: () => { that.changeIncidentState(incidentType, incidentLocation, incidentUserId, destinationPlaceId) } },
                             ],
                             { cancelable: false }
-                        );
+                        );}
                         // that.getRouteDirection(destinationPlaceId, incidentLocation);
                     })
 
@@ -314,12 +317,15 @@ export default class Responder extends Component {
                         source={require("../images/logout.png")}
                     />
                 </TouchableOpacity>
-                <TouchableOpacity style={{ top: screen.height - 180, paddingLeft: 20, paddingBottom: 30 }} onPress={this._toggleModal}>
-                    <Image
-                        style={{ width: 65, height: 65 }}
-                        source={require('../images/addLogo.png')}
-                    />
-                </TouchableOpacity>
+                <FloatingAction
+        visible={!this.state.isIncidentReady}
+        position='left'
+        distanceToEdge={20}
+        color='#833030'
+        overlayColor='rgba(68, 68, 68, 0)'
+        floatingIcon={<Icon name='paper-plane' color='white' size={20} />}
+        onPressMain={this._toggleModal}
+      />
                 <Modal isVisible={this.state.isModalVisible}
                     style={{
                         justifyContent: 'center',

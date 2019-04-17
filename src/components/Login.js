@@ -1,12 +1,12 @@
 
 import React, { Component } from 'react';
 import {
-  StyleSheet, Text, View, TextInput,
-  TouchableOpacity
+  StyleSheet, Text, View,
+  TouchableOpacity, TextInput, Keyboard, TouchableWithoutFeedback
 } from 'react-native';
+import {Input} from 'react-native-elements';
+import {Button} from 'react-native-paper';
 import app from '../config/fire';
-
-
 import { Actions } from 'react-native-router-flux';
 
 import Logo from './Logo';
@@ -27,6 +27,7 @@ class Login extends Component {
 
   loginUserAccount() {
     console.log("loog", this.state.email, this.state.password);
+    Keyboard.dismiss();
     app.auth()
       .signInWithEmailAndPassword(this.state.email.trim(), this.state.password)
       .catch(error => {
@@ -59,28 +60,27 @@ class Login extends Component {
     return (
       <View style={styles.container}>
         <Logo />
-        <TextInput style={styles.inputBox}
-          underlineColorAndroid='rgba(0,0,0,0)'
-          placeholder="Email"
-          placeholderTextColor="#ffffff"
-          selectionColor="#fff"
-          keyboardType="email-address"
-          onChangeText={(email) => this.setState({ email })}
+        <Input
+        placeholder='E-mail Address'
+        inputContainerStyle={styles.inputBox}
+        value={this.state.email}
+        onChangeText={(email) => this.setState({ email })}
         />
-        <TextInput style={styles.inputBox}
-          underlineColorAndroid='rgba(0,0,0,0)'
-          placeholder="Password"
-          secureTextEntry={true}
-          placeholderTextColor="#ffffff"
-          onChangeText={(password) => this.setState({ password })}
+
+        <Input
+        inputContainerStyle={styles.inputBox}
+        placeholder='Password'
+        value={this.state.password}
+        secureTextEntry={true}
+        onChangeText={(password) => this.setState({ password })}
         />
-        <TouchableOpacity style={styles.button}
-          onPress={this.loginUserAccount.bind(this)}
-        >
-          <Text style={styles.buttonText}>
-            Login
-              </Text>
-        </TouchableOpacity>
+
+        <Button mode='contained'
+          color='rgba(255, 255,255,0.75)'
+          onPress={this.loginUserAccount.bind(this)}>
+          Log In
+        </Button>
+
         <View style={styles.signupTextCont}>
           <Text style={styles.signupText}>Don't have an account yet?</Text>
           <TouchableOpacity onPress={this.signUp}><Text style={styles.signupButton}> Signup</Text></TouchableOpacity>
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#455a64',
+    backgroundColor: '#833030',
   },
   signupTextCont: {
     flexGrow: 1,
@@ -115,15 +115,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500'
   },
+  
   inputBox: {
     width: 300,
-    backgroundColor: 'rgba(255, 255,255,0.2)',
-    borderRadius: 25,
+    borderColor: 'rgba(255, 255,255,0.3)',
+    backgroundColor: 'rgba(255, 255,255,0.3)',
+    borderRadius: 10,
     paddingHorizontal: 16,
-    fontSize: 16,
-    color: '#ffffff',
-    marginVertical: 10
+    marginVertical: 10,
+    marginHorizontal: 45,
+    position: 'relative'
   },
+
   button: {
     width: 300,
     backgroundColor: '#1c313a',
