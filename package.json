@@ -14,11 +14,16 @@
     "lodash": "^4.17.11",
     "react": "16.6.3",
     "react-native": "0.58.6",
+    "react-native-bottom-sheet-behavior": "^1.0.0",
     "react-native-button": "^2.3.0",
+    "react-native-elements": "^1.1.0",
+    "react-native-floating-action": "^1.14.2",
     "react-native-maps": "^0.23.0",
     "react-native-modal": "^9.0.0",
+    "react-native-paper": "^2.15.2",
     "react-native-radio-buttons-group": "^1.0.7",
-    "react-native-router-flux": "^4.0.6"
+    "react-native-router-flux": "^4.0.6",
+    "react-native-vector-icons": "^6.4.2"
   },
   "devDependencies": {
     "babel-core": "7.0.0-bridge.0",
