@@ -77,7 +77,6 @@ export default class ReportIncident extends Component {
             1000
         );
     }
-    // update state
     onPress = data => {
         this.setState({ data });
 
@@ -266,8 +265,6 @@ export default class ReportIncident extends Component {
                                 {
                                     text: "Ok", onPress: () => {
                                         that.hasResponderAlert();
-                                        // that.setState({ hasAlerted: true })
-                                        // console.log("this.state.has", this.state.hasAlerted)
                                     }
                                 },
                             ],
@@ -322,14 +319,6 @@ export default class ReportIncident extends Component {
                         );
 
                     }
-                    // Alert.alert(
-                    //     "A Volunteer has accepted an incident "
-                    //     , `${volunteerRespondingID}`,
-                    //     [
-                    //         { text: "Ok", onPress: () => { console.log("Hehe") } },
-                    //     ],
-                    //     { cancelable: false }
-                    // );
                     console.log("volunteer responding", volunteerRespondingID, destinationPlaceId);
                     that.setState({ volunteerRespondingID, destinationPlaceId });
                     that.volunteerCoordinates(volunteerRespondingID)
@@ -371,10 +360,8 @@ export default class ReportIncident extends Component {
                 locationPredictions: [],
                 incidentLocation: destinationName,
                 destinationPlaceId,
-                // incidentPhoto: destinationPlaceId,
             });
             Keyboard.dismiss();
-            // console.log("destination place Id from regular user: ", this.state.destinationPlaceId, this.state.incidentPhoto);
             this.map.fitToCoordinates(pointCoords);
         } catch (error) {
             console.error(error);
@@ -501,7 +488,6 @@ export default class ReportIncident extends Component {
                             latitude: point2.latitude,
                             longitude: point2.longitude,
                         }
-                        // this.state.pointCoords[this.state.pointCoords.length - 1]
                     }
                 />
 
@@ -537,7 +523,6 @@ export default class ReportIncident extends Component {
                 <TouchableHighlight
                     key={prediction.id}
                     onPress={() =>
-                        // this.pressedPrediction(prediction)
                         this.getRouteDirection(
                             prediction.place_id,
                             prediction.description
