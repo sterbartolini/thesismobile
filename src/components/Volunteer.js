@@ -477,7 +477,6 @@ export default class Volunteer extends Component {
             responderResponding: '',
             volunteerResponding: '',
             userId: '',
-            // userID: '',
             coordinates: {
                 lng: null,
                 lat: null
@@ -493,11 +492,9 @@ export default class Volunteer extends Component {
 
     signOutUser() {
         app.auth().signOut().then(function () {
-            // Sign-out successful.
             console.log("SUCCESFULL LOG OUT");
 
         }).catch(function (error) {
-            // An error happened.
             console.log(error)
         });
 
@@ -547,12 +544,9 @@ export default class Volunteer extends Component {
 
 
         app.database().ref(`incidents/${incidentID}`).update({
-            isResponding: true,
-            unresponded: false,
-            timeResponded: hours + ':' + min + ':' + sec,
-            // responderCoords: this.state.pointCoords,
+            isRespondingVolunteer: true,
+            unrespondedVolunteer: false,
             volunteerResponding: this.state.userId,
-            timeResponded: hours + ':' + min + ':' + sec,
         });
 
         this.setState({
@@ -561,9 +555,6 @@ export default class Volunteer extends Component {
             incidentType,
             destinationPlaceId,
         })
-        // this.getRouteDirection();
-
-        // console.log("NAPASAKA DIRI INCIDNET ID", incidentID);
         this.getRouteDirection(destinationPlaceId, incidentLocation);
     }
 

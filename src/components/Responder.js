@@ -484,6 +484,7 @@ export default class Responder extends Component {
             isModalVisible: false,
             isIncidentReady: false,
             destinationPlaceId: '',
+            isRequestingResponders: '',
             userKey: "",
             userType: '',
             incidentType: "",
@@ -501,7 +502,6 @@ export default class Responder extends Component {
             responderResponding: '',
             volunteerResponding: '',
             userId: '',
-            // userID: '',
             coordinates: {
                 lng: null,
                 lat: null
@@ -517,11 +517,8 @@ export default class Responder extends Component {
 
     signOutUser() {
         app.auth().signOut().then(function () {
-            // Sign-out successful.
             console.log("SUCCESFULL LOG OUT");
-
         }).catch(function (error) {
-            // An error happened.
             console.log(error)
         });
 
@@ -534,7 +531,9 @@ export default class Responder extends Component {
             if (user) {
                 if (this._isMounted) {
                     this.setState({ user, userId: user.uid });
+                    var userId = this.state.userId
                     this.getUserInfo();
+                    this.incidentListener(userId);
                 }
             }
         });
@@ -559,11 +558,10 @@ export default class Responder extends Component {
 
         })
         this.setState({ userType, firstName, lastName });
-        console.log("USER TYPE", this.state.userType, this.state.firstName, this.state.lastName, this.state.userId)
 
     }
 
-    changeIncidentState = (incidentType, incidentLocation, incidentID, destinationPlaceId) => {
+    changeIncidentState = (incidentLocation, incidentID, destinationPlaceId) => {
         var hours = new Date().getHours(); //Current Hours
         var min = new Date().getMinutes(); //Current Minutes
         var sec = new Date().getSeconds(); //Current Seconds
@@ -571,101 +569,163 @@ export default class Responder extends Component {
 
 
         app.database().ref(`incidents/${incidentID}`).update({
-            isResponding: true,
-            unresponded: false,
-            timeResponded: hours + ':' + min + ':' + sec,
-            // responderCoords: this.state.pointCoords,
+            isRespondingResponder: true,
+            unrespondedResponder: false,
             responderResponding: this.state.userId,
-            timeResponded: hours + ':' + min + ':' + sec,
         });
 
-        this.setState({
-            isIncidentReady: true,
-            incidentLocation,
-            incidentType,
-            destinationPlaceId,
-        })
-        // this.getRouteDirection();
-
-        // console.log("NAPASAKA DIRI INCIDNET ID", incidentID);
         this.getRouteDirection(destinationPlaceId, incidentLocation);
     }
 
-    incidentListener = () => {
+    isRequestingResponders = (incidentUserId) => {
+        console.log("REQUEST", this.state.userId);
+        var incidentId = incidentUserId;
+        app.database().ref(`incidents/${incidentId}/requestResponders/${incidentId}`).update({
+            timeArrived: '',
+        });
+        this.getRouteDirection(destinationPlaceId, incidentLocation);
+    }
 
-        var responderListen = app.database().ref(`mobileUsers/Responder/${this.state.userId}`)
+    incidentListener = (userId) => {
+        console.log("INCIDNE LISTENER", userId);
+        var responderListen = app.database().ref(`mobileUsers/Responder/${userId}`)
         var that = this;
         var incidentDetails = '';
-        var incidentID = '';
+
+
         responderListen.on('value', (snapshot) => {
-            snapshot.forEach(function (childSnapshot) {
-                var data = childSnapshot.key;
-                console.log("data", data)
-                var childData = childSnapshot.val();
-                incidentID = childData.incidentID;
-                var responderResponding = '';
-                var data2;
-                if (incidentID) {
-                    console.log("WLECOME", incidentID);
-                    var userIncidentId = app.database().ref(`incidents/${incidentID}`)
-                    var incidentType = '';
-                    var incidentLocation = '';
-                    var destinationPlaceId = '';
-                    var incidentUserId = incidentID;
-                    userIncidentId.on('value', function (snapshot) {
-                        incidentDetails = snapshot.val() || null;
-                        console.log("incident Detials", incidentDetails)
-                        incidentType = incidentDetails.incidentType;
-                        incidentLocation = incidentDetails.incidentLocation;
-                        destinationPlaceId = incidentDetails.destinationPlaceId;
-                        responderResponding = incidentDetails.responderResponding;
-                        if (responderResponding === "") {
-                            Alert.alert(
-                                "INCIDENT DETAILS ",
-                                `Incident Type: ${incidentType}
-                             Incident Location: ${incidentLocation}
-                                                     `
-                                ,
-                                [
-                                    { text: "Respond", onPress: () => { that.changeIncidentState(incidentType, incidentLocation, incidentUserId, destinationPlaceId) } },
-                                ],
-                                { cancelable: false }
-                            );
-                        }
+            var data = snapshot.val();
+            var incidentID = data.incidentID;
+            console.log("incident ID", incidentID);
 
-                        // that.getRouteDirection(destinationPlaceId, incidentLocation);
-                    })
-
-                }
-                // console.log("NACHANGE", data2, data, childData);
-            })
-
-            // this.setState({ incidentID })
-            // console.log("hithereeeeee", this.state.incidentID);
-
-
-            // var userIncidentId = app.database().ref(`incidents/${this.state.incidentID}`);
-            // var incidentType = "";
-            // var incidentLocation = "";
-            // var incidentPhoto = "";
-            // userIncidentId.on('value', function (snapshot) {
-            //     incidentDetails = snapshot.val() || null;
-            //     console.log("incident 222222222222222222", incidentDetails)
-            //     incidentType = incidentDetails.incidentType;
-            //     incidentLocation = incidentDetails.incidentLocation;
-            //     incidentPhoto = incidentDetails.incidentPhoto;
-            // })
-            // this.setState({ incidentType, incidentLocation, incidentPhoto });
-            // this.incidentIsResponded();
-            // console.log("incident LOCATION AND TYPE", this.state.incidentType, this.state.incidentLocation)
-
+            if (incidentID !== "") {
+                console.log("hey i got here");
+                var userIncidentId = app.database().ref(`incidents/${incidentID}`)
+                userIncidentId.on('value', (snapshot) => {
+                    incidentDetails = snapshot.val() || null;
+                    var incidentType = incidentDetails.incidentType;
+                    var incidentLocation = incidentDetails.incidentLocation;
+                    var destinationPlaceId = incidentDetails.destinationPlaceId;
+                    var responderResponding = incidentDetails.responderResponding;
+                    var isRequestingResponders = incidentDetails.isRequestingResponders;
+                    if (responderResponding === "") {
+                        Alert.alert(
+                            "INCIDENT DETAILS ",
+                            `Incident Type: ${incidentType}
+                                                 Incident Location: ${incidentLocation}
+                                                                         `
+                            ,
+                            [
+                                { text: "Respond", onPress: () => { that.changeIncidentState(incidentLocation, incidentID, destinationPlaceId) } },
+                            ],
+                            { cancelable: false }
+                        );
+                        that.setState({ isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId });
+                    }
+                    else if (responderResponding === userId) {
+                        console.log("same responder");
+                    }
+                    else if (responderResponding && isRequestingResponders === true) {
+                        Alert.alert(
+                            "REQUESTING ADDITIONAL VOLUNTEER ",
+                            `Incident Type: ${incidentType}
+                                                 Incident Location: ${incidentLocation}
+                                                                         `
+                            ,
+                            [
+                                { text: "Respond", onPress: () => { that.isRequestingResponders(userId); } },
+                            ],
+                            { cancelable: false }
+                        );
+                        that.setState({ isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId });
+                    } else {
+                        console.log("error: there is responderResponder but is not Requesting responder")
+                    }
+                })
+            }
+            else {
+                console.log("incident Id is not here");
+                that.setState({ isIncidentReady: false, destinationPlaceId: '', incidentLocation: '' });
+                console.log("incident is not ready", that.state.isIncidentReady);
+            }
         })
+
+        // responderListen.on('value', (snapshot) => {
+        //     snapshot.forEach(function (childSnapshot) {
+        //         var data = childSnapshot.key;
+        //         var childData = childSnapshot.val();
+        //         console.log("DATA HERE", childData)
+        //         var incidentID = childData.incidentID;
+        //         var responderResponding = '';
+        //         if (incidentID) {
+        //             console.log("WLECOME", incidentID);
+        //             var userIncidentId = app.database().ref(`incidents/${incidentID}`)
+        //             var incidentType = '';
+        //             var incidentLocation = '';
+        //             var destinationPlaceId = '';
+        //             var incidentUserId = incidentID;
+        //             userIncidentId.on('value', function (snapshot) {
+        //                 incidentDetails = snapshot.val() || null;
+        //                 console.log("incident Detials", incidentDetails)
+        //                 incidentType = incidentDetails.incidentType;
+        //                 incidentLocation = incidentDetails.incidentLocation;
+        //                 destinationPlaceId = incidentDetails.destinationPlaceId;
+        //                 responderResponding = incidentDetails.responderResponding;
+        //                 var isRequestingResponders = incidentDetails.isRequestingResponders;
+        //                 if (responderResponding === "") {
+        //                     Alert.alert(
+        //                         "INCIDENT DETAILS ",
+        //                         `Incident Type: ${incidentType}
+        //                      Incident Location: ${incidentLocation}
+        //                                              `
+        //                         ,
+        //                         [
+        //                             { text: "Respond", onPress: () => { that.changeIncidentState(incidentType, incidentLocation, incidentUserId, destinationPlaceId) } },
+        //                         ],
+        //                         { cancelable: false }
+        //                     );
+        //                 }
+        //                 if (isRequestingResponders === true) {
+        //                     that.isRequestingResponders(incidentUserId)
+        //                 }
+
+        //                 // that.getRouteDirection(destinationPlaceId, incidentLocation);
+        //             })
+
+        //         }
+        //         else {
+        //             console.log("no incident in node");
+        //         }
+        //         // console.log("NACHANGE", data2, data, childData);
+        //     })
+
+        //     // this.setState({ incidentID })
+        //     // console.log("hithereeeeee", this.state.incidentID);
+
+
+        //     // var userIncidentId = app.database().ref(`incidents/${this.state.incidentID}`);
+        //     // var incidentType = "";
+        //     // var incidentLocation = "";
+        //     // var incidentPhoto = "";
+        //     // userIncidentId.on('value', function (snapshot) {
+        //     //     incidentDetails = snapshot.val() || null;
+        //     //     console.log("incident 222222222222222222", incidentDetails)
+        //     //     incidentType = incidentDetails.incidentType;
+        //     //     incidentLocation = incidentDetails.incidentLocation;
+        //     //     incidentPhoto = incidentDetails.incidentPhoto;
+        //     // })
+        //     // this.setState({ incidentType, incidentLocation, incidentPhoto });
+        //     // this.incidentIsResponded();
+        //     // console.log("incident LOCATION AND TYPE", this.state.incidentType, this.state.incidentLocation)
+
+        // })
     }
 
     componentDidMount() {
         this.authListener();
-
-        this.incidentListener();
+        // console.log("component mound user Id", this.state.userId);
+        // var userId = this.state.userId;
+        // this.incidentListener(userId);
 
 
         this.watchId = navigator.geolocation.watchPosition(
