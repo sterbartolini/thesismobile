@@ -2,10 +2,11 @@
 import React, { Component } from 'react';
 import {
   StyleSheet, Text, View, TextInput,
-  TouchableOpacity
+  TouchableOpacity,Alert
 } from 'react-native';
 import app from '../config/fire';
-
+import { Formik } from 'formik'
+import * as yup from 'yup'
 
 import { Actions } from 'react-native-router-flux';
 
@@ -21,18 +22,23 @@ class Login extends Component {
       email: '',
       password: '',
       user: {},
+      emailError:'',
+      passwordError:'',
+      error:''
     }
   }
 
 
-  loginUserAccount() {
-    console.log("loog", this.state.email, this.state.password);
-    app.auth()
-      .signInWithEmailAndPassword(this.state.email.trim(), this.state.password)
-      .catch(error => {
-        console.log(error);
-      });
-    console.log("Login");
+  loginUserAccount(values) {
+      app.auth()
+        .signInWithEmailAndPassword(values.email.trim(), values.password)
+        .catch(e => {
+          var err = e.message;
+          console.log(err);
+          this.setState({err: 'Username or Password is Incorrect'});
+        });
+      console.log("Login");
+
 
 
   };
@@ -57,7 +63,29 @@ class Login extends Component {
 
   render() {
     return (
+<Formik initialValues={{ email:'',password:''}}
+            onSubmit={values=>{
+                this.loginUserAccount(values);
+            }}
+            validationSchema={
+                yup.object().shape({
+                  
+                    email: yup
+                    .string()
+                    .email('Invalid Email Format')
+                    .required('Email Address is Required'),
+                    password: yup
+                    .string()
+                    .strict(true)
+                    .matches(/[a-zA-Z0-9]/, 'Password contains Special Characte')
+                    .trim('Password contains Special Characters')
+                    .required('Password is Required'),
+                })
+            }>
+            {({ values, handleChange, errors, setFieldTouched, touched, isValid, handleSubmit }) => (          
+
       <View style={styles.container}>
+       
         <Logo />
         <TextInput style={styles.inputBox}
           underlineColorAndroid='rgba(0,0,0,0)'
@@ -65,17 +93,30 @@ class Login extends Component {
           placeholderTextColor="#ffffff"
           selectionColor="#fff"
           keyboardType="email-address"
-          onChangeText={(email) => this.setState({ email })}
+          value={values.email}
+          onBlur={() => setFieldTouched('email')}
+          onChangeText={handleChange('email')}
         />
+        {touched.email && errors.email &&
+          <Text style={{ fontSize: 15, color: 'red' }}>{errors.email}</Text>
+        }          
         <TextInput style={styles.inputBox}
           underlineColorAndroid='rgba(0,0,0,0)'
           placeholder="Password"
           secureTextEntry={true}
           placeholderTextColor="#ffffff"
-          onChangeText={(password) => this.setState({ password })}
+          value={values.password}
+          onBlur={() => setFieldTouched('password')}
+          onChangeText={handleChange('password')}
         />
+        {touched.password && errors.password &&
+          <Text style={{ fontSize: 15, color: 'red' }}>{errors.password}</Text>
+        }             
+         <Text style={{ fontSize: 15, color: 'red' }} className='catchError'>{this.state.err}</Text>
+
         <TouchableOpacity style={styles.button}
-          onPress={this.loginUserAccount.bind(this)}
+          disabled={!isValid}
+          onPress={handleSubmit}
         >
           <Text style={styles.buttonText}>
             Login
@@ -85,8 +126,11 @@ class Login extends Component {
           <Text style={styles.signupText}>Don't have an account yet?</Text>
           <TouchableOpacity onPress={this.signUp}><Text style={styles.signupButton}> Signup</Text></TouchableOpacity>
         </View>
-
       </View>
+            )}
+            </Formik>
+     
+     
     );
   }
 }
