@@ -155,6 +155,7 @@ export default class Responder extends Component {
     }
 
     arrivedLocation = () => {
+        this.setState({isIncidentReady:false});
         var hours = new Date().getHours(); //Current Hours
         var min = new Date().getMinutes(); //Current Minutes
         var sec = new Date().getSeconds(); //Current Seconds
@@ -451,13 +452,13 @@ export default class Responder extends Component {
     <ActionButton buttonColor="rgba(50,0,60,1)" position='right' offsetX={17} onPress={this.signOutUser} /> :
 
     <ActionButton buttonColor="orange" position='left' offsetY={85} offsetX={17}>
-    <ActionButton.Item buttonColor='#9b59b6' title="I have arrived" onPress={() => {this.arrivedLocation}}>
+    <ActionButton.Item buttonColor='#9b59b6' title="I have arrived" onPress={() => {this.arrivedLocation()}}>
       <Icon name="md-create" style={styles.actionButtonIcon} />
     </ActionButton.Item>
-    <ActionButton.Item buttonColor='#3498db' title="I need more responders" onPress={() => {this.requestAdditionalResponders}}>
+    <ActionButton.Item buttonColor='#3498db' title="I need more responders" onPress={() => {this.requestAdditionalResponders()}}>
       <Icon name="md-notifications-off" style={styles.actionButtonIcon} />
     </ActionButton.Item>
-    <ActionButton.Item buttonColor='#1abc9c' title="I need more volunteers" onPress={() => {this.requestAdditionalVolunteers}}>
+    <ActionButton.Item buttonColor='#1abc9c' title="I need more volunteers" onPress={() => {this.requestAdditionalVolunteers()}}>
       <Icon name="md-done-all" style={styles.actionButtonIcon} />
     </ActionButton.Item>
   </ActionButton>
