@@ -11,9 +11,12 @@
     "babel-polyfill": "^6.26.0",
     "es6-symbol": "^3.1.1",
     "firebase": "^5.8.6",
+    "formik": "^1.5.2",
     "lodash": "^4.17.11",
     "react": "16.6.3",
     "react-native": "0.58.6",
+    "react-native-action-button": "^2.8.5",
+    "react-native-bottom-sheet-behavior": "^1.0.0",
     "react-native-button": "^2.3.0",
     "react-native-elements": "^1.1.0",
     "react-native-floating-action": "^1.14.2",
@@ -22,7 +25,10 @@
     "react-native-paper": "^2.15.2",
     "react-native-radio-buttons-group": "^1.0.7",
     "react-native-router-flux": "^4.0.6",
-    "react-native-vector-icons": "^6.4.2"
+    "react-native-vector-icons": "^6.4.2",
+    "rn-bottom-drawer": "^1.4.3",
+    "simple-react-validator": "^1.0.7",
+    "yup": "^0.27.0"
   },
   "devDependencies": {
     "babel-core": "7.0.0-bridge.0",

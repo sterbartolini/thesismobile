@@ -47,13 +47,15 @@ export default class App extends Component {
     this.authListener();
   }
 
+
+
   authListener() {
     app.auth().onAuthStateChanged(user => {
       if (user) {
         this.setState({ user, userId: user.uid });
         this.userDetails();
       } else {
-        this.setState({ user: null });
+        this.setState({ user: null, userId: null });
       }
     });
   }
