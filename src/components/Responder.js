@@ -1,8 +1,11 @@
 import React, { Component } from "react";
 import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
 import Modal from 'react-native-modal';
-import { FloatingAction } from 'react-native-floating-action';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import ActionButton, { ActionButtonItem } from 'react-native-action-button';
+import {Button} from 'react-native-paper';
+import BottomDrawer from 'rn-bottom-drawer';
+
+import Icon from 'react-native-vector-icons/Ionicons';
 import {
     CoordinatorLayout,
     BottomSheetBehavior,
@@ -19,8 +22,30 @@ import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
 
 import PolyLine from '@mapbox/polyline';
 var screen = Dimensions.get('window');
+const TAB_BAR_HEIGHT = 100;
+
 
 export default class Responder extends Component {
+
+    renderContent = () => {
+        return (
+          <View>
+            <Text style={{
+                        fontSize: 20,
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        marginTop: 5}}> 
+                    {this.state.incidentType}
+            </Text>
+            <Text style={{
+                        fontSize: 19,
+                        textAlign: 'center',
+                        marginBottom:10}}>  
+                    {this.state.incidentLocation}          
+            </Text>
+          </View>
+        )
+      }
     constructor(props) {
         super(props);
         this.state = {
@@ -192,76 +217,6 @@ export default class Responder extends Component {
                 console.log("incident is not ready", that.state.isIncidentReady);
             }
         })
-
-        // responderListen.on('value', (snapshot) => {
-        //     snapshot.forEach(function (childSnapshot) {
-        //         var data = childSnapshot.key;
-        //         var childData = childSnapshot.val();
-        //         console.log("DATA HERE", childData)
-        //         var incidentID = childData.incidentID;
-        //         var responderResponding = '';
-        //         if (incidentID) {
-        //             console.log("WLECOME", incidentID);
-        //             var userIncidentId = app.database().ref(`incidents/${incidentID}`)
-        //             var incidentType = '';
-        //             var incidentLocation = '';
-        //             var destinationPlaceId = '';
-        //             var incidentUserId = incidentID;
-        //             userIncidentId.on('value', function (snapshot) {
-        //                 incidentDetails = snapshot.val() || null;
-        //                 console.log("incident Detials", incidentDetails)
-        //                 incidentType = incidentDetails.incidentType;
-        //                 incidentLocation = incidentDetails.incidentLocation;
-        //                 destinationPlaceId = incidentDetails.destinationPlaceId;
-        //                 responderResponding = incidentDetails.responderResponding;
-        //                 var isRequestingResponders = incidentDetails.isRequestingResponders;
-        //                 if (responderResponding === "") {
-        //                     Alert.alert(
-        //                         "INCIDENT DETAILS ",
-        //                         `Incident Type: ${incidentType}
-        //                      Incident Location: ${incidentLocation}
-        //                                              `
-        //                         ,
-        //                         [
-        //                             { text: "Respond", onPress: () => { that.changeIncidentState(incidentType, incidentLocation, incidentUserId, destinationPlaceId) } },
-        //                         ],
-        //                         { cancelable: false }
-        //                     );
-        //                 }
-        //                 if (isRequestingResponders === true) {
-        //                     that.isRequestingResponders(incidentUserId)
-        //                 }
-
-        //                 // that.getRouteDirection(destinationPlaceId, incidentLocation);
-        //             })
-
-        //         }
-        //         else {
-        //             console.log("no incident in node");
-        //         }
-        //         // console.log("NACHANGE", data2, data, childData);
-        //     })
-
-        //     // this.setState({ incidentID })
-        //     // console.log("hithereeeeee", this.state.incidentID);
-
-
-        //     // var userIncidentId = app.database().ref(`incidents/${this.state.incidentID}`);
-        //     // var incidentType = "";
-        //     // var incidentLocation = "";
-        //     // var incidentPhoto = "";
-        //     // userIncidentId.on('value', function (snapshot) {
-        //     //     incidentDetails = snapshot.val() || null;
-        //     //     console.log("incident 222222222222222222", incidentDetails)
-        //     //     incidentType = incidentDetails.incidentType;
-        //     //     incidentLocation = incidentDetails.incidentLocation;
-        //     //     incidentPhoto = incidentDetails.incidentPhoto;
-        //     // })
-        //     // this.setState({ incidentType, incidentLocation, incidentPhoto });
-        //     // this.incidentIsResponded();
-        //     // console.log("incident LOCATION AND TYPE", this.state.incidentType, this.state.incidentLocation)
-
-        // })
     }
 
     componentDidMount() {
@@ -352,6 +307,7 @@ export default class Responder extends Component {
         if (this.state.latitude === null) return null;
 
         return (
+            
             <View style={styles.container}>
                 <MapView
                     ref={map => { this.map = map; }}
@@ -373,51 +329,29 @@ export default class Responder extends Component {
                     />
                     {marker}
                 </MapView>
-                <TouchableOpacity
-                    style={{
-                        top: screen.height - 650,
-                        paddingLeft: 100
-                    }}
-                    onPress={() => this.signOutUser()}
-                >
-                    <Image
-                        style={{ width: 65, height: 65 }}
-                        source={require("../images/logout.png")}
-                    />
-                </TouchableOpacity>
-                {/* <TouchableOpacity style={{ top: screen.height - 180, paddingLeft: 20, paddingBottom: 30 }} onPress={this._toggleModal}>
-                    <Image
-                        style={{ width: 65, height: 65 }}
-                        source={require('../images/addLogo.png')}
-                    />
-                </TouchableOpacity> */}
+                   
+            
+{!this.state.isIncidentReady ?
+    <ActionButton buttonColor="rgba(50,0,60,1)" position='right' offsetX={17} onPress={this.signOutUser} /> :
+    <ActionButton buttonColor="orange" position='left' offsetY={85} offsetX={17}>
+    <ActionButton.Item buttonColor='#9b59b6' title="I have arrived" onPress={() => {this.setState({isIncidentReady:false})}}>
+      <Icon name="md-create" style={styles.actionButtonIcon} />
+    </ActionButton.Item>
+    <ActionButton.Item buttonColor='#3498db' title="I need more responders" onPress={() => {}}>
+      <Icon name="md-notifications-off" style={styles.actionButtonIcon} />
+    </ActionButton.Item>
+    <ActionButton.Item buttonColor='#1abc9c' title="I need more volunteers" onPress={() => {}}>
+      <Icon name="md-done-all" style={styles.actionButtonIcon} />
+    </ActionButton.Item>
+  </ActionButton>
+}  
 
-{/* <FloatingAction
-        position='left'
-        distanceToEdge={20}
-        color='#833030'
-        overlayColor='rgba(68, 68, 68, 0)'
-        floatingIcon={<Icon name='paper-plane' color='white' size={20} />}
-        visible={!this.state.isIncidentReady}
-        onPressMain={this._toggleModal}
-      /> */}
-
-{/* <CoordinatorLayout style={{flex: 1}}>
-            <View style={{ flex: 1, backgroundColor: 'transparent' }}></View>
-            <BottomSheetBehavior
-              ref='bottomSheet'
-              peekHeight={70}
-              hideable={false}
-              state={BottomSheetBehavior.STATE_COLLAPSED}>
-              <View style={{backgroundColor: '#4389f2'}}>
-                <View style={{padding: 26}}>
-                  <Text>BottomSheetBehavior!</Text>
-                </View>
-                <View style={{height: 200, backgroundColor: '#fff'}} />
-              </View>
-            </BottomSheetBehavior>
-          </CoordinatorLayout> */}
-
+{this.state.isIncidentReady ?
+    <BottomDrawer containerHeight={150} downDisplay={50} startUp={false} roundedEdges={true}>
+          {this.renderContent()}
+    </BottomDrawer> :
+    <ActionButton buttonColor="rgba(0,76,60,1)" position='left' offsetX={17} onPress={this._toggleModal}/>
+}
                 <Modal isVisible={this.state.isModalVisible}
                     style={{
                         justifyContent: 'center',
@@ -438,20 +372,19 @@ export default class Responder extends Component {
                         fontSize: 20,
                         fontWeight: 'bold',
                         textAlign: 'center',
-                        marginTop: 20,
-                        marginBottom: 15
+                        marginTop: 10,
                     }}> INCIDENT DESCRIPTION
                     </Text>
                     <Text style={{
                         fontSize: 20,
                         textAlign: 'center',
-                        marginTop: 20,
                         marginBottom: 15
                     }}>  {this.state.isIncidentReady === true ? (
-                        <Text>
+                       <Text>
                             Incident Type: {this.state.incidentType}
                             Incident Location: {this.state.incidentLocation}
                         </Text>
+
                     ) : (<Text> No Incident Yet</Text>)
                         }
                     </Text>
@@ -463,6 +396,10 @@ export default class Responder extends Component {
 
 
 const styles = StyleSheet.create({
+    user:{
+        position:'absolute',
+        top:150
+    },
     main: {
         flex: 1,
         padding: 30,
