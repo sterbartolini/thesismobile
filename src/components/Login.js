@@ -61,7 +61,6 @@ class Login extends Component {
     return (
       <View style={styles.container}>
         <Logo />
-
         <Input
         placeholder='E-mail Address'
         inputContainerStyle={styles.inputBox}
@@ -77,7 +76,7 @@ class Login extends Component {
         onChangeText={(password) => this.setState({ password })}
         />
 
-        <Button mode='contained'
+        <Button mode='contained'zz
           color='rgba(255, 255,255,0.75)'
           onPress={this.loginUserAccount.bind(this)}>
           Log In
@@ -117,6 +116,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500'
   },
+  
   inputBox: {
     width: 300,
     borderColor: 'rgba(255, 255,255,0.3)',
@@ -127,6 +127,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 45,
     position: 'relative'
   },
+
   button: {
     width: 300,
     backgroundColor: '#1c313a',

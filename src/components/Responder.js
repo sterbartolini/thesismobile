@@ -46,13 +46,18 @@ export default class Responder extends Component {
           </View>
         )
       }
+    _isMounted = false;
     constructor(props) {
         super(props);
         this.state = {
             isModalVisible: false,
+            isAccepted: false,
             isIncidentReady: false,
             destinationPlaceId: '',
             isRequestingResponders: '',
+            incidentID: '',
+            userId: '',
+            originalResponder: false,
             userKey: "",
             userType: '',
             incidentType: "",
@@ -69,7 +74,7 @@ export default class Responder extends Component {
             timeResponded: '',
             responderResponding: '',
             volunteerResponding: '',
-            userId: '',
+            requestResponders: false,
             coordinates: {
                 lng: null,
                 lat: null
@@ -94,7 +99,7 @@ export default class Responder extends Component {
 
 
     authListener() {
-        this._isMounted = true;
+        // this._isMounted = true;
         app.auth().onAuthStateChanged(user => {
             if (user) {
                 if (this._isMounted) {
@@ -103,6 +108,7 @@ export default class Responder extends Component {
                     this.getUserInfo();
                     this.incidentListener(userId);
                 }
+
             }
         });
     }
@@ -113,8 +119,8 @@ export default class Responder extends Component {
         var lastName = '';
 
         console.log("HI", this.state.userId);
-        var user2 = app.database().ref(`users/${this.state.userId}/`);
-        user2.on('value', function (snapshot) {
+        this.user2 = app.database().ref(`users/${this.state.userId}/`);
+        this.user2.on('value', function (snapshot) {
             const data2 = snapshot.val() || null;
             console.log("data2", data2);
 
@@ -129,102 +135,197 @@ export default class Responder extends Component {
 
     }
 
-    changeIncidentState = (incidentLocation, incidentID, destinationPlaceId) => {
+    changeIncidentState = (incidentType, incidentLocation, incidentID, destinationPlaceId, userId) => {
+
         var hours = new Date().getHours(); //Current Hours
         var min = new Date().getMinutes(); //Current Minutes
         var sec = new Date().getSeconds(); //Current Seconds
-
-
 
         app.database().ref(`incidents/${incidentID}`).update({
             isRespondingResponder: true,
             unrespondedResponder: false,
             responderResponding: this.state.userId,
+            timeReceive: hours + ':' + min + ';' + sec,
         });
 
+        app.database().ref(`mobileUsers/Responder/${this.state.userId}`).update({
+            isAccepted: true,
+        })
         this.getRouteDirection(destinationPlaceId, incidentLocation);
     }
 
-    isRequestingResponders = (incidentUserId) => {
+    arrivedLocation = () => {
+        var hours = new Date().getHours(); //Current Hours
+        var min = new Date().getMinutes(); //Current Minutes
+        var sec = new Date().getSeconds(); //Current Seconds
+
+        let incidentID = this.state.incidentId;
+        console.log("incidentID on arrived Location", incidentID);
+        app.database().ref(`incidents/${incidentID}`).update({
+            timeResponded: hours + ':' + min + ';' + sec,
+        });
+    }
+
+
+    isSettled = () => {
+
+        let incidentID = this.state.incidentId;
+        let userId = this.state.userId;
+        console.log("is settled?", incidentID, userId);
+
+            this.setState({ isSettled: true })
+        var responderListen = app.database().ref(`mobileUsers/Responder/${userId}`)
+        responderListen.update({
+            incidentID: '',
+            isAccepted: false,
+        })
+
+        app.database().ref(`incidents/${incidentID}`).update({
+            isSettled: true,
+        });
+    }
+
+    
+    arrivedLocationRequested = () => {
+        var hours = new Date().getHours(); //Current Hours
+        var min = new Date().getMinutes(); //Current Minutes
+        var sec = new Date().getSeconds(); //Current Seconds
+
+        let incidentID = this.state.incidentId;
+        let userId = this.state.userId;
+        console.log("incidentID on arrived Location", incidentID, userId);
+        app.database().ref(`incidents/${incidentID}/requestResponders/${userId}`).update({
+            timeArrived: hours + ':' + min + ';' + sec,
+        });
+    }
+
+
+    isRequestingResponders = (incidentId, userId, destinationPlaceId, incidentLocation) => {
         console.log("REQUEST", this.state.userId);
-        var incidentId = incidentUserId;
-        app.database().ref(`incidents/${incidentId}/requestResponders/${incidentId}`).update({
+        this.setState({
+            // isRequestingResponders: true,
+            isIncidentReady: true,
+            requestResponders: true,
+        })
+
+        app.database().ref(`incidents/${incidentId}/requestResponders/${userId}`).update({
             timeArrived: '',
         });
         this.getRouteDirection(destinationPlaceId, incidentLocation);
     }
 
+    requestAdditionalResponders = () => {
+        let incidentID = this.state.incidentId;
+        let userId = this.state.userId;
+        console.log("incidentID on arrived Location", incidentID, userId);
+        app.database().ref(`incidents/${incidentID}`).update({
+             isRequestingResponders: true,
+        });
+    }
+
+    requestAdditionalVolunteers = () => {
+        let incidentID = this.state.incidentId;
+        let userId = this.state.userId;
+        console.log("incidentID on arrived Location", incidentID, userId);
+        app.database().ref(`incidents/${incidentID}`).update({
+             isRequestingVolunteers: true,
+        });
+    }
+    
     incidentListener = (userId) => {
+        // this._isMounted = true;
         console.log("INCIDNE LISTENER", userId);
-        var responderListen = app.database().ref(`mobileUsers/Responder/${userId}`)
+        this.responderListen = app.database().ref(`mobileUsers/Responder/${userId}`)
         var that = this;
         var incidentDetails = '';
 
 
-        responderListen.on('value', (snapshot) => {
-            var data = snapshot.val();
-            var incidentID = data.incidentID;
-            console.log("incident ID", incidentID);
+        this.responderListen.on('value', (snapshot) => {
+            if (this._isMounted) {
 
-            if (incidentID !== "") {
-                console.log("hey i got here");
-                var userIncidentId = app.database().ref(`incidents/${incidentID}`)
-                userIncidentId.on('value', (snapshot) => {
-                    incidentDetails = snapshot.val() || null;
-                    var incidentType = incidentDetails.incidentType;
-                    var incidentLocation = incidentDetails.incidentLocation;
-                    var destinationPlaceId = incidentDetails.destinationPlaceId;
-                    var responderResponding = incidentDetails.responderResponding;
-                    var isRequestingResponders = incidentDetails.isRequestingResponders;
-                    if (responderResponding === "") {
-                        Alert.alert(
-                            "INCIDENT DETAILS ",
-                            `Incident Type: ${incidentType}
+
+                var data = snapshot.val();
+                var incidentID = data.incidentID;
+                console.log("incident ID", incidentID);
+
+                if (incidentID !== "") {
+                    console.log("hey i got here");
+                    this.userIncidentId = app.database().ref(`incidents/${incidentID}`)
+                    this.userIncidentId.on('value', (snapshot) => {
+                        incidentDetails = snapshot.val() || null;
+                        var incidentType = incidentDetails.incidentType;
+                        var incidentLocation = incidentDetails.incidentLocation;
+                        var destinationPlaceId = incidentDetails.destinationPlaceId;
+                        var responderResponding = incidentDetails.responderResponding;
+                        var isSettled = incidentDetails.isSettled;
+                        var isRequestingResponders = incidentDetails.isRequestingResponders;
+
+                        if (incidentID && responderResponding === "" && isSettled === false) {
+                            Alert.alert(
+                                "INCIDENT DETAILS ",
+                                `Incident Type: ${incidentType}
                                                  Incident Location: ${incidentLocation}
                                                                          `
-                            ,
-                            [
-                                { text: "Respond", onPress: () => { that.changeIncidentState(incidentLocation, incidentID, destinationPlaceId) } },
-                            ],
-                            { cancelable: false }
-                        );
-                        that.setState({ isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId });
-                    }
-                    else if (responderResponding === userId) {
-                        console.log("same responder");
-                    }
-                    else if (responderResponding && isRequestingResponders === true) {
-                        Alert.alert(
-                            "REQUESTING ADDITIONAL VOLUNTEER ",
-                            `Incident Type: ${incidentType}
+                                ,
+                                [
+                                    { text: "Respond", onPress: () => { that.changeIncidentState(incidentType, incidentLocation, incidentID, destinationPlaceId, userId) } },
+                                ],
+                                { cancelable: false }
+                            );
+                            if (that._isMounted) {
+                                that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID });
+                            }
+                        }
+                        else if (responderResponding === userId && isSettled === false) {
+                            console.log("same responder");
+                            if (that._isMounted) {
+                                that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId,  incidentId: incidentID, isSettled: false });
+                                that.getRouteDirection(destinationPlaceId, incidentLocation);
+                            }
+
+                            // that.isSettled();
+                        }
+                        else if (responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === false) {
+                            Alert.alert(
+                                "REQUESTING ADDITIONAL VOLUNTEER ",
+                                `Incident Type: ${incidentType}
                                                  Incident Location: ${incidentLocation}
                                                                          `
-                            ,
-                            [
-                                { text: "Respond", onPress: () => { that.isRequestingResponders(userId); } },
-                            ],
-                            { cancelable: false }
-                        );
-                        that.setState({ isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId });
-                    } else {
-                        console.log("error: there is responderResponder but is not Requesting responder")
+                                ,
+                                [
+                                    { text: "Respond", onPress: () => { that.isRequestingResponders(incidentID, userId, destinationPlaceId, incidentLocation) } },
+                                ],
+                                { cancelable: false }
+                            );     
+                                that.setState({incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId});
+                        } 
+                        else if (responderResponding === userId && isSettled === true){
+                            console.log("same additional responder has acceted")
+                            that.setState({ isIncidentReady: false, isSettled: true, incidentId: incidentID });
+                        } 
+                        else if (responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === true) {
+                            that.setState({incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId});
+                        }
+                        else {
+                            console.log("system is FLAWED")
+                        }
+                    })
+                }
+                else {
+                    console.log("incident Id is not here");
+                    if (that._isMounted) {
+                        that.setState({ isIncidentReady: false, destinationPlaceId: '', incidentLocation: '' });
                     }
-                })
-            }
-            else {
-                console.log("incident Id is not here");
-                that.setState({ isIncidentReady: false, destinationPlaceId: '', incidentLocation: '' });
-                console.log("incident is not ready", that.state.isIncidentReady);
+                    console.log("incident is not ready", that.state.isIncidentReady);
+                }
             }
         })
     }
 
     componentDidMount() {
-        this.authListener();
-        // console.log("component mound user Id", this.state.userId);
-        // var userId = this.state.userId;
-        // this.incidentListener(userId);
+        this._isMounted = true;
 
+        this.authListener();
 
         this.watchId = navigator.geolocation.watchPosition(
 
@@ -233,9 +334,9 @@ export default class Responder extends Component {
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude
                 });
-                if (this.state.destinationPlaceId) {
-                    this.getRouteDirection(this.state.destinationPlaceId, this.state.incidentLocation);
-                }
+                // if (this.state.destinationPlaceId) {
+                //     this.getRouteDirection(this.state.destinationPlaceId, this.state.incidentLocation);
+                // }
                 app.database().ref(`mobileUsers/Responder/${this.state.userId}`).update({
                     coordinates: {
                         lng: this.state.longitude,
@@ -253,35 +354,41 @@ export default class Responder extends Component {
     componentWillUnmount() {
         this._isMounted = false;
         navigator.geolocation.clearWatch(this.watchId);
+        this.user2.off();
+        this.responderListen.off();
+        this.userIncidentId.off();
     }
 
 
     async getRouteDirection(destinationPlaceId, destinationName) {
-        console.log("HIIII DESTINATION PLACE IS", destinationPlaceId);
-        // destinationPlaceId = this.state.incidentPhoto;
-        try {
-            const response = await fetch(
-                `https://maps.googleapis.com/maps/api/directions/json?origin=${
-                this.state.latitude
-                },${
-                this.state.longitude
-                }&destination=place_id:${destinationPlaceId}&key=${apiKey}`
-            );
-            const json = await response.json();
-            console.log(json);
-            const points = PolyLine.decode(json.routes[0].overview_polyline.points);
-            const pointCoords = points.map(point => {
-                return { latitude: point[0], longitude: point[1] };
-            });
-            this.setState({
-                pointCoords,
-                locationPredictions: [],
-                incidentLocation: destinationName,
-            });
-            Keyboard.dismiss();
-            this.map.fitToCoordinates(pointCoords);
-        } catch (error) {
-            console.log(error);
+
+        if (this._isMounted) {
+            console.log("HIIII DESTINATION PLACE IS", destinationPlaceId);
+            // destinationPlaceId = this.state.incidentPhoto;
+            try {
+                const response = await fetch(
+                    `https://maps.googleapis.com/maps/api/directions/json?origin=${
+                    this.state.latitude
+                    },${
+                    this.state.longitude
+                    }&destination=place_id:${destinationPlaceId}&key=${apiKey}`
+                );
+                const json = await response.json();
+                console.log(json);
+                const points = PolyLine.decode(json.routes[0].overview_polyline.points);
+                const pointCoords = points.map(point => {
+                    return { latitude: point[0], longitude: point[1] };
+                });
+                this.setState({
+                    pointCoords,
+                    locationPredictions: [],
+                    incidentLocation: destinationName,
+                });
+                Keyboard.dismiss();
+                this.map.fitToCoordinates(pointCoords);
+            } catch (error) {
+                console.log(error);
+            }
         }
     }
 
@@ -304,6 +411,19 @@ export default class Responder extends Component {
         }
 
 
+        let polylinemarker = null;
+
+        polylinemarker = (
+            <Polyline
+                coordinates={this.state.pointCoords}
+                strokeWidth={4}
+                strokeColor="red"
+            />
+        )
+
+
+
+
         if (this.state.latitude === null) return null;
 
         return (
@@ -322,25 +442,22 @@ export default class Responder extends Component {
                     showsUserLocation={true}
 
                 >
-                    <Polyline
-                        coordinates={this.state.pointCoords}
-                        strokeWidth={4}
-                        strokeColor="red"
-                    />
-                    {marker}
+                    {this.state.isSettled === false ? polylinemarker : null}
+                    {this.state.isSettled === false ? marker : null}
                 </MapView>
                    
             
 {!this.state.isIncidentReady ?
     <ActionButton buttonColor="rgba(50,0,60,1)" position='right' offsetX={17} onPress={this.signOutUser} /> :
+
     <ActionButton buttonColor="orange" position='left' offsetY={85} offsetX={17}>
-    <ActionButton.Item buttonColor='#9b59b6' title="I have arrived" onPress={() => {this.setState({isIncidentReady:false})}}>
+    <ActionButton.Item buttonColor='#9b59b6' title="I have arrived" onPress={() => {this.arrivedLocation}}>
       <Icon name="md-create" style={styles.actionButtonIcon} />
     </ActionButton.Item>
-    <ActionButton.Item buttonColor='#3498db' title="I need more responders" onPress={() => {}}>
+    <ActionButton.Item buttonColor='#3498db' title="I need more responders" onPress={() => {this.requestAdditionalResponders}}>
       <Icon name="md-notifications-off" style={styles.actionButtonIcon} />
     </ActionButton.Item>
-    <ActionButton.Item buttonColor='#1abc9c' title="I need more volunteers" onPress={() => {}}>
+    <ActionButton.Item buttonColor='#1abc9c' title="I need more volunteers" onPress={() => {this.requestAdditionalVolunteers}}>
       <Icon name="md-done-all" style={styles.actionButtonIcon} />
     </ActionButton.Item>
   </ActionButton>
@@ -352,6 +469,8 @@ export default class Responder extends Component {
     </BottomDrawer> :
     <ActionButton buttonColor="rgba(0,76,60,1)" position='left' offsetX={17} onPress={this._toggleModal}/>
 }
+    
+          
                 <Modal isVisible={this.state.isModalVisible}
                     style={{
                         justifyContent: 'center',
@@ -388,6 +507,25 @@ export default class Responder extends Component {
                     ) : (<Text> No Incident Yet</Text>)
                         }
                     </Text>
+                    {this.state.isIncidentReady === true ? (
+                        <Button
+                            style={{ fontSize: 18, color: 'white' }}
+                            onPress={this.isSettled}
+                            containerStyle={{
+                                padding: 8,
+                                marginLeft: 70,
+                                marginRight: 70,
+                                height: 40,
+                                borderRadius: 6,
+                                backgroundColor: 'mediumseagreen',
+                                marginTop: 20,
+                            }}
+                        >
+                            <Text style={{ justifyContent: 'center', color: 'white' }} >Incident Setted</Text>
+                        </Button>
+                    ) : (null)
+                    }
+                  
                 </Modal>
             </View>
         );
