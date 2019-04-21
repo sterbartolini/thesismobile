@@ -4,7 +4,7 @@ import {
     TouchableOpacity
 } from 'react-native';
 import RadioGroup from "react-native-radio-buttons-group";
-import app, { db } from '../config/fire';
+import app, { db, fire2 } from '../config/fire';
 
 import Logo from './Logo';
 
@@ -50,20 +50,20 @@ class Register extends Component {
             ? selectedButton.value
             : this.state.data[0].label;
         this.setState({ user_type: selectedButton });
-
+        console.log("what did i select", selectedButton);
     };
 
     createUserAccount() {
 
         var email = this.state.email;
         var password = this.state.password;
-        const auth = app.auth();
+        const auth = fire2.auth();
         const promise = auth.createUserWithEmailAndPassword(email.trim(), password.trim());
 
         promise.then(user => {
             console.log('account created');
             let app = db.ref('users/' + user.user.uid);
-
+            console.log('user type here', this.state.user_type);
             app.update({
                 email: this.state.email,
                 password: this.state.password,

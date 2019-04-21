@@ -1,3 +1,4 @@
+
 import React, { Component } from "react";
 import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
 import Modal from 'react-native-modal';
@@ -105,8 +106,8 @@ export default class ReportIncident extends Component {
         var lastName = '';
 
         console.log("HI", this.state.userId);
-        var user2 = app.database().ref(`users/${this.state.userId}/`);
-        user2.on('value', function (snapshot) {
+        this.user2 = app.database().ref(`users/${this.state.userId}/`);
+        this.user2.on('value', function (snapshot) {
             const data2 = snapshot.val() || null;
             console.log("data2", data2);
 
@@ -125,7 +126,7 @@ export default class ReportIncident extends Component {
     componentDidMount() {
 
         this.authListener();
-        this.incidentState();
+
 
 
         this.watchId = navigator.geolocation.watchPosition(
@@ -135,9 +136,7 @@ export default class ReportIncident extends Component {
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude
                 });
-                if (this.state.destinationPlaceId) {
-                    this.getRouteDirection(this.state.destinationPlaceId, this.state.destinationName);
-                }
+           
                 app.database().ref(`mobileUsers/Regular User/${this.state.userId}`).update({
                     coordinates: {
                         lng: this.state.longitude,
@@ -156,12 +155,12 @@ export default class ReportIncident extends Component {
     responderCoordinates = () => {
 
         console.log("Welcome RESPONDER", this.state.responderRespondingID);
-        var userIncidentId = app.database().ref(`mobileUsers/Responder/${this.state.responderRespondingID}`)
+        this.userIncidentId = app.database().ref(`mobileUsers/Responder/${this.state.responderRespondingID}`)
         var latitude = '';
         var longitude = '';
         var that = this;
         if (this.state.responderRespondingID) {
-            userIncidentId.on('value', function (snapshot) {
+            this.userIncidentId.on('value', function (snapshot) {
                 incidentDetails = snapshot.val() || null;
                 latitude = incidentDetails.coordinates.lat;
                 longitude = incidentDetails.coordinates.lng;
@@ -200,39 +199,80 @@ export default class ReportIncident extends Component {
         // var regularUserListen = app.database().ref(`mobileUsers/Regular User/${this.state.userId}/`);
 
         var that = this;
-        // regularUserListen.once('value', (snapshot) => {
-        //     snapshot.forEach(function (childSnapshot) {
-        //         var data = childSnapshot.key;
-        //         console.log("data", data)
-        //         var childData = childSnapshot.val();
-        //         var incidentID = childData.incidentID;
-
-        //         if (incidentID) {
-        //             that.incidentResponderListener(incidentID);
-        //             that.incidentVolunteerListener(incidentID);
-
-        //             that.setState({ incidentID })
-        //         }
-        //     })
-
-
-
-        // })
+      
         console.log("this state", this.state.userId)
         console.log("user bit not state", userId);
-        regularUserListen = app.database().ref(`mobileUsers/Regular User/${this.state.userId}`);
-        regularUserListen.on('value', function (snapshot) {
+        this.regularUserListen = app.database().ref(`mobileUsers/Regular User/${userId}`);
+        this.regularUserListen.on('value', function (snapshot) {
 
             const snap = snapshot.val() || null;
             console.log("user data mobile regular", snap);
             var incidentID = snap.incidentID;
             console.log("INCIDENt", incidentID);
-            if (incidentID) {
-                that.incidentResponderListener(incidentID);
-                that.incidentVolunteerListener(incidentID);
-                that.setState({ incidentID })
+            // if (incidentID) {
+            //     that.incidentResponderListener(incidentID);
+            //     that.incidentVolunteerListener(incidentID);
+            //     that.setState({ incidentID })
+            // }
+            if (incidentID !== "") {
+                console.log("hey i got here");
+                this.incidentIDListen = app.database().ref(`incidents/${incidentID}`)
+                this.incidentIDListen.on('value', (snapshot) => {
+                    incidentDetails = snapshot.val() || null;
+
+                    var coordinates = incidentDetails.coordinates;
+
+                    var reportedBy = incidentDetails.reportedBy
+                    var isSettled = incidentDetails.isSettled;
+                    var incidentType = incidentDetails.incidentType;
+                    var incidentLocation = incidentDetails.incidentLocation;
+                    if (reportedBy === userId && isSettled === false) {
+                        console.log("same responder");
+                        if (that._isMounted) {
+                            that.incidentResponderListener(incidentID);
+                            that.incidentVolunteerListener(incidentID);
+                            that.setState({ coordinates, isSettled: false });
+
+                        }
+
+                    }
+                    else if (reportedBy === userId && isSettled === true) {
+                        that.incidentSettled(userId, incidentType, incidentLocation);
+                    }
+                })
+            }
+            else {
+                console.log("incident Id is not here");
+                // if (that._isMounted) {
+                //     that.setState({ destinationPlaceId: '', incidentLocation: '' });
+                // }
+                console.log("incident is not ready", that.state.isIncidentReady);
             }
         })
+    }
+
+    incidentSettled = (userId, incidentType, incidentLocation) => {
+
+
+            this.setState({ isSettled: true })
+      
+        Alert.alert(
+            "INCIDENT HAS BEEN RESPONDED!! ",
+            `Incident Type: ${incidentType}
+                             Incident Location: ${incidentLocation}
+                                                     `
+            ,
+            [
+                { text: "Ok", onPress: () => { console.log("ok") } },
+            ],
+            { cancelable: false }
+        );
+
+        var responderListen = app.database().ref(`mobileUsers/Regular User/${userId}`)
+        responderListen.update({
+            incidentID: '',
+        })
+
     }
 
     hasResponderAlert = () => {
@@ -244,18 +284,18 @@ export default class ReportIncident extends Component {
     incidentResponderListener = (incidentID) => {
         console.log("naa ka diri?", incidentID)
         console.log("hi there", this.state.incidentID);
-        var responderListen = app.database().ref(`incidents/${incidentID}`)
+        this.responderListen = app.database().ref(`incidents/${incidentID}`)
         var that = this;
         var responderRespondingID = '';
         var hasResponderAlerted = this.state.hasResponderAlerted;
 
-        responderListen.on('value', function (snapshot) {
+        this.responderListen.on('value', function (snapshot) {
             const data2 = snapshot.val() || null;
             console.log("data2222222222222222", data2);
 
             if (data2) {
                 responderRespondingID = data2.responderResponding;
-                var destinationPlaceId = data2.destinationPlaceId;
+                // var destinationPlaceId = data2.destinationPlaceId;
                 if (responderRespondingID) {
                     if (hasResponderAlerted === false) {
                         Alert.alert(
@@ -271,13 +311,13 @@ export default class ReportIncident extends Component {
                             { cancelable: false }
                         );
                     }
-                    console.log("responder responding", responderRespondingID, destinationPlaceId);
-                    that.setState({ responderRespondingID, destinationPlaceId });
+                    console.log("responder responding", responderRespondingID);
+                    that.setState({ responderRespondingID });
                     that.responderCoordinates(responderRespondingID)
                 }
                 else {
-                    console.log("responder NOT responding", responderRespondingID, destinationPlaceId);
-                    that.setState({ responderRespondingID, destinationPlaceId });
+                    console.log("responder NOT responding", responderRespondingID);
+                    that.setState({ responderRespondingID });
                     that.responderCoordinates(responderRespondingID)
                 }
 
@@ -295,18 +335,18 @@ export default class ReportIncident extends Component {
     incidentVolunteerListener = (incidentID) => {
         console.log("naa ka diri?", incidentID)
         console.log("hi there", this.state.incidentID);
-        var volunteerListen = app.database().ref(`incidents/${incidentID}`)
+        this.volunteerListen = app.database().ref(`incidents/${incidentID}`)
         var that = this;
         let volunteerRespondingID = '';
 
         let hasVolunteerAlerted = this.state.hasVolunteerAlerted;
-        volunteerListen.on('value', function (snapshot) {
+        this.volunteerListen.on('value', function (snapshot) {
             const data2 = snapshot.val() || null;
             console.log("data333333", data2);
 
             if (data2) {
                 volunteerRespondingID = data2.volunteerResponding;
-                var destinationPlaceId = data2.destinationPlaceId;
+
                 if (volunteerRespondingID) {
                     if (hasVolunteerAlerted === true) {
                         Alert.alert(
@@ -319,12 +359,12 @@ export default class ReportIncident extends Component {
                         );
 
                     }
-                    console.log("volunteer responding", volunteerRespondingID, destinationPlaceId);
-                    that.setState({ volunteerRespondingID, destinationPlaceId });
+                    console.log("volunteer responding", volunteerRespondingID);
+                    that.setState({ volunteerRespondingID });
                     that.volunteerCoordinates(volunteerRespondingID)
                 } else {
-                    console.log("volunteer responding", volunteerRespondingID, destinationPlaceId);
-                    that.setState({ volunteerRespondingID, destinationPlaceId });
+                    console.log("volunteer responding", volunteerRespondingID);
+                    that.setState({ volunteerRespondingID });
                     that.volunteerCoordinates(volunteerRespondingID)
                 }
 
@@ -336,6 +376,12 @@ export default class ReportIncident extends Component {
     componentWillUnmount() {
         this._isMounted = false;
         navigator.geolocation.clearWatch(this.watchId);
+        this.volunteerListen.off();
+        this.responderListen.off()
+        this.regularUserListen.off();
+        this.user2.off();
+        this.userIncidentId.off();
+        this.incidentIDListen.off();
     }
 
 
@@ -477,21 +523,21 @@ export default class ReportIncident extends Component {
 
     render() {
 
+        let markerCoord = this.state.coordinates
+
         let marker = null;
-        let point = this.state.pointCoords;
-        let point2 = point[point.length - 1];
-        if (this.state.pointCoords.length > 1) {
+        if (this.state.coordinates.lat) {
             marker = (
                 <Marker
                     coordinate={
                         {
-                            latitude: point2.latitude,
-                            longitude: point2.longitude,
+                            latitude: markerCoord.lat,
+                            longitude: markerCoord.lng,
                         }
                     }
                 />
 
-            );
+            )
         }
         var markerResponder = null;
         if (this.state.responderLat) {
@@ -553,32 +599,34 @@ export default class ReportIncident extends Component {
                     showsUserLocation={true}
 
                 >
-                    <Polyline
+                    {/* <Polyline
                         coordinates={this.state.pointCoords}
                         strokeWidth={4}
                         strokeColor="red"
-                    />
-                    {marker}
-                    {this.state.responderRespondingID === "" ? null : markerResponder}
-                    {this.state.volunteerRespondingID === "" ? null : markerVolunteer}
+                    /> */}
+                    {this.state.isSettled === true ? null : marker}
+                    {this.state.isSettled === true ? null : markerResponder}
+                    {this.state.isSettled === true ? null : markerVolunteer}
+                    
                 </MapView>
 
                 <TouchableOpacity
                     style={{
                         top: screen.height - 650,
-                        paddingLeft: 100
+                        left: screen.width - 100,
+
                     }}
                     onPress={() => this.signOutUser()}
                 >
                     <Image
-                        style={{ width: 65, height: 65 }}
-                        source={require("../images/logout.png")}
+                        style={{ width: 75, height: 75 }}
+                        source={require("../images/exit.png")}
                     />
                 </TouchableOpacity>
-                <TouchableOpacity style={{ top: screen.height - 180, paddingLeft: 20, paddingBottom: 30 }} onPress={this._toggleModal}>
+                <TouchableOpacity style={{ top: screen.height - 200, right: screen.width - 450, paddingBottom: 30 }} onPress={this._toggleModal}>
                     <Image
-                        style={{ width: 65, height: 65 }}
-                        source={require('../images/addLogo.png')}
+                        style={{ width: 70, height: 70 }}
+                        source={require('../images/send.png')}
                     />
                 </TouchableOpacity>
                 <Modal isVisible={this.state.isModalVisible}
