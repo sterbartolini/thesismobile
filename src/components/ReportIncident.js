@@ -371,7 +371,7 @@ export default class ReportIncident extends Component {
           <TouchableOpacity onPress={this._toggleModal}>
             <Image
               style={{ width: 45, height: 45, marginLeft: 240 }}
-              source={require("../images/close.jpg")}
+              source={require("../images/cancel.png")}
             />
           </TouchableOpacity>
           <Text

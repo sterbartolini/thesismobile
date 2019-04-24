@@ -1,10 +1,14 @@
+
+
 import React, { Component } from 'react';
 import {
     StyleSheet, Text, View, TextInput,
-    TouchableOpacity
+    TouchableOpacity, Button, Alert, Keyboard
 } from 'react-native';
 import RadioGroup from "react-native-radio-buttons-group";
 import app, { db } from '../config/fire';
+import { Formik } from 'formik'
+import * as yup from 'yup'
 
 import Logo from './Logo';
 
@@ -19,7 +23,7 @@ class Register extends Component {
             lastName: '',
             contactNumber: '',
             isMobile: true,
-            user_type: '',
+            user_type: 'Responder',
             user: {},
             userId: '',
             data: [
@@ -53,23 +57,25 @@ class Register extends Component {
 
     };
 
-    createUserAccount() {
+    createUserAccount(
+        values
+    ) {
 
-        var email = this.state.email;
-        var password = this.state.password;
+        var email = values.email;
+        var password = values.password;
         const auth = app.auth();
         const promise = auth.createUserWithEmailAndPassword(email.trim(), password.trim());
-
         promise.then(user => {
-            console.log('account created');
+            Alert.alert(JSON.stringify(`Account ${values.email} has been created`))
+            Keyboard.dismiss();
             let app = db.ref('users/' + user.user.uid);
 
             app.update({
-                email: this.state.email,
-                password: this.state.password,
-                firstName: this.state.firstName,
-                lastName: this.state.lastName,
-                contactNumber: this.state.contactNumber,
+                email: values.email,
+                password: values.password,
+                firstName: values.firstName,
+                lastName: values.lastName,
+                contactNumber: values.contactNumber,
                 isMobile: true,
                 user_type: this.state.user_type,
             });
@@ -77,65 +83,130 @@ class Register extends Component {
         });
         promise.catch(e => {
             var err = e.message;
-            console.log(err);
+            Alert.alert(JSON.stringify(`${err}`))
         })
-        console.log("loog", this.state.email, this.state.password);
+
     };
 
 
     render() {
         return (
-            <View style={styles.container}>
-                {/* <Logo /> */}
-                <TextInput style={styles.inputBox}
-                    underlineColorAndroid='rgba(0,0,0,0)'
-                    placeholder="First Name"
-                    placeholderTextColor="#ffffff"
-                    selectionColor="#fff"
-                    keyboardType="email-address"
-                    onChangeText={(firstName) => this.setState({ firstName })}
-                />
-                <TextInput style={styles.inputBox}
-                    underlineColorAndroid='rgba(0,0,0,0)'
-                    placeholder="Last Name"
-                    placeholderTextColor="#ffffff"
-                    selectionColor="#fff"
-                    keyboardType="email-address"
-                    onChangeText={(lastName) => this.setState({ lastName })}
-                />
-                <TextInput style={styles.inputBox}
-                    underlineColorAndroid='rgba(0,0,0,0)'
-                    placeholder="Email Address"
-                    placeholderTextColor="#ffffff"
-                    selectionColor="#fff"
-                    keyboardType="email-address"
-                    onChangeText={(email) => this.setState({ email })}
-                />
-                <TextInput style={styles.inputBox}
-                    underlineColorAndroid='rgba(0,0,0,0)'
-                    placeholder="Contact Number"
-                    placeholderTextColor="#ffffff"
-                    selectionColor="#fff"
-                    keyboardType="email-address"
-                    onChangeText={(contactNumber) => this.setState({ contactNumber })}
-                />
-                <TextInput style={styles.inputBox}
-                    underlineColorAndroid='rgba(0,0,0,0)'
-                    placeholder="Password"
-                    secureTextEntry={true}
-                    placeholderTextColor="#ffffff"
-                    onChangeText={(password) => this.setState({ password })}
-                />
-                <RadioGroup radioButtons={this.state.data} onPress={this.userType} />
-                <TouchableOpacity style={styles.button}
-                    onPress={this.createUserAccount.bind(this)}>
-                    <Text style={styles.buttonText}>
-                        Register
+            <Formik initialValues={{ firstName: '', lastName: '', email: '', contactNumber: '', password: '' }}
+                onSubmit={values => {
+                    this.createUserAccount(values);
+
+
+                }}
+                validationSchema={
+                    yup.object().shape({
+                        firstName: yup
+                            .string()
+                            .matches(/[a-zA-Z]/, 'Name cannot cintain Special Characters or Numbers')
+                            .required('First Name is Required'),
+                        lastName: yup
+                            .string()
+                            .strict(true)
+                            .matches(/[a-zA-Z]/, 'Name cannot contain Special Characters or Numbers')
+                            .trim("Name cannot contain Special Characters or Numbers")
+                            .required('Last Name is Required'),
+                        email: yup
+                            .string()
+                            .email('Invalid Email Format')
+                            .required('Email Address is Required'),
+                        contactNumber: yup
+                            .number()
+                            .typeError('Only Number Inputs Allowed')
+                            .required('Contact Number is Required'),
+                        password: yup
+                            .string()
+                            .strict(true)
+                            .matches(/[a-zA-Z0-9]/, 'Password cannot contain Special Characters')
+                            .trim('Name cannot contain Special Characters or Numbers')
+                            .required('Password is Required'),
+                    })
+                }>
+                {({ values, handleChange, errors, setFieldTouched, touched, isValid, handleSubmit }) => (
+                    <View style={styles.container}>
+                        <TextInput style={styles.inputBox}
+                            underlineColorAndroid='rgba(0,0,0,0)'
+                            placeholder="First Name"
+                            placeholderTextColor="#ffffff"
+                            selectionColor="#fff"
+                            keyboardType="email-address"
+                            value={values.firstName}
+                            onChangeText={handleChange('firstName')}
+                            onBlur={() => setFieldTouched('firstName')}
+                        />
+                        {touched.firstName && errors.firstName &&
+                            <Text style={{ fontSize: 15, color: 'red' }}>{errors.firstName}</Text>
+                        }
+                        <TextInput style={styles.inputBox}
+                            underlineColorAndroid='rgba(0,0,0,0)'
+                            placeholder="Last Name"
+                            placeholderTextColor="#ffffff"
+                            selectionColor="#fff"
+                            keyboardType="email-address"
+                            value={values.lastName}
+                            onChangeText={handleChange('lastName')}
+                            onBlur={() => setFieldTouched('lastName')}
+                        />
+                        {touched.lastName && errors.lastName &&
+                            <Text style={{ fontSize: 15, color: 'red' }}>{errors.lastName}</Text>
+                        }
+                        <TextInput style={styles.inputBox}
+                            underlineColorAndroid='rgba(0,0,0,0)'
+                            placeholder="Email Address"
+                            placeholderTextColor="#ffffff"
+                            selectionColor="#fff"
+                            keyboardType="email-address"
+                            value={values.email}
+                            onChangeText={handleChange('email')}
+                            onBlur={() => setFieldTouched('email')}
+                        />
+                        {touched.email && errors.email &&
+                            <Text style={{ fontSize: 15, color: 'red' }}>{errors.email}</Text>
+                        }
+                        <TextInput style={styles.inputBox}
+                            underlineColorAndroid='rgba(0,0,0,0)'
+                            placeholder="Contact Number"
+                            placeholderTextColor="#ffffff"
+                            selectionColor="#fff"
+                            keyboardType="email-address"
+                            value={values.contactNumber}
+                            onChangeText={handleChange('contactNumber')}
+                            onBlur={() => setFieldTouched('contactNumber')}
+                        />
+                        {touched.contactNumber && errors.contactNumber &&
+                            <Text style={{ fontSize: 15, color: 'red' }}>{errors.contactNumber}</Text>
+                        }
+                        <TextInput style={styles.inputBox}
+                            underlineColorAndroid='rgba(0,0,0,0)'
+                            placeholder="Password"
+                            secureTextEntry={true}
+                            placeholderTextColor="#ffffff"
+                            value={values.password}
+                            onChangeText={handleChange('password')}
+                            onBlur={() => setFieldTouched('password')}
+
+                        />
+                        {touched.password && errors.password &&
+                            <Text style={{ fontSize: 15, color: 'red' }}>{errors.password}</Text>
+                        }
+                        <RadioGroup radioButtons={this.state.data} onPress={this.userType} />
+                        <TouchableOpacity style={styles.button}
+                            disabled={!isValid}
+                            onPress={handleSubmit}>
+
+                            <Text style={styles.buttonText}>
+                                Register
                     </Text>
-                </TouchableOpacity>
-            </View>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </Formik>
         );
     }
+
 }
 
 const styles = StyleSheet.create({
@@ -143,7 +214,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#455a64',
+        backgroundColor: '#833030',
     },
     signupTextCont: {
         flexGrow: 1,
