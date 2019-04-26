@@ -80,8 +80,7 @@ class Register extends Component {
                 user_type: this.state.user_type,
             });
 
-        });
-        promise.catch(e => {
+        }).catch(e => {
             var err = e.message;
             Alert.alert(JSON.stringify(`${err}`))
         })
