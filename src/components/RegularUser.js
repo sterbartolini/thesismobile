@@ -34,6 +34,8 @@ export default class RegularUser extends Component {
             firstName: "",
             lastName: "",
             user: null,
+            markerLat: null,
+            markerLng: null,
             unresponded: true,
             isResponding: false,
             isSettled: false,
@@ -227,19 +229,21 @@ export default class RegularUser extends Component {
                 this.incidentIDListen.on('value', (snapshot) => {
                     incidentDetails = snapshot.val() || null;
 
-                    var markerCoordsLat = incidentDetails.coordinates.lat;
-                    var markerCoordsLng = incidentDetails.coordinates.lng;
-                    console.log("COORDINATES", markerCoordsLat, markerCoordsLng);
+                    var markerLat = incidentDetails.coordinates.lat;
+                    var markerLng = incidentDetails.coordinates.lng;
+                    console.log("COORDINATES", markerLat, markerLng);
                     var reportedBy = incidentDetails.reportedBy
                     var isSettled = incidentDetails.isSettled;
                     var incidentType = incidentDetails.incidentType;
+                    var destinationPlaceId = incidentDetails.destinationPlaceId;
+                    console.log("DESTINATION PLACE", destinationPlaceId);   
                     var incidentLocation = incidentDetails.incidentLocation;
                     if (reportedBy === userId && isSettled === false) {
 
                         that.incidentResponderListener(incidentID);
                         that.incidentVolunteerListener(incidentID);
-                        that.setState({ markerCoordsLat, markerCoordsLng, isSettled: false });
-
+                        that.setState({ markerLat, markerLng, isSettled: false });
+                        that.getRouteDirection(destinationPlaceId, incidentLocation);
 
 
                     }
@@ -313,7 +317,7 @@ export default class RegularUser extends Component {
                             [
                                 {
                                     text: "Ok", onPress: () => {
-                                        that.hasResponderAlert
+                                        that.hasResponderAlert()
                                     }
                                 },
                             ],
@@ -362,7 +366,7 @@ export default class RegularUser extends Component {
                             "A Volunteer has accepted an incident "
                             , `${volunteerRespondingID}`,
                             [
-                                { text: "Ok", onPress: () => { that.hasVolunteerAlert } },
+                                { text: "Ok", onPress: () => { that.hasVolunteerAlert() } },
                             ],
                             { cancelable: false }
                         );
@@ -535,15 +539,15 @@ export default class RegularUser extends Component {
     }
 
     render() {
-        console.log("marekr coords", this.state.markerCoordsLat, this.state.markerCoordsLng, this.state.isSettled);
+        console.log("marekr coords", this.state.markerLat, this.state.markerLng, this.state.isSettled);
         let marker = null;
-        if (this.state.coordinates.lat) {
+        if (this.state.markerLat) {
             marker = (
                 <Marker
                     coordinate={
                         {
-                            latitude: this.state.markerCoordsLat,
-                            longitude: this.state.markerCoordsLng
+                            latitude: this.state.markerLat,
+                            longitude: this.state.markerLng
                         }
                     }
                 />
@@ -610,11 +614,16 @@ export default class RegularUser extends Component {
                     showsUserLocation={true}
 
                 >
-                    {/* <Polyline
+                  {/* <Polyline
                         coordinates={this.state.pointCoords}
                         strokeWidth={4}
                         strokeColor="red"
                     /> */}
+                    {this.state.isSettled === true ? null : <Polyline
+                        coordinates={this.state.pointCoords}
+                        strokeWidth={4}
+                        strokeColor="red"
+                    /> }
                     {this.state.isSettled === true ? null : marker}
                     {this.state.isSettled === true ? null : markerResponder}
                     {this.state.isSettled === true ? null : markerVolunteer}
