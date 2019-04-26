@@ -11,7 +11,7 @@ import { Formik } from 'formik'
 import * as yup from 'yup'
 
 import Logo from './Logo';
-
+const nameRegExp = RegExp(/^[a-zA-Z.,-\s]+$/);
 
 class Register extends Component {
     constructor(props) {
@@ -23,6 +23,7 @@ class Register extends Component {
             lastName: '',
             contactNumber: '',
             isMobile: true,
+            isVerified: false,
             user_type: 'Responder',
             user: {},
             userId: '',
@@ -69,6 +70,7 @@ class Register extends Component {
             Alert.alert(JSON.stringify(`Account ${values.email} has been created`))
             Keyboard.dismiss();
             let app = db.ref('users/' + user.user.uid);
+            let unverified = db.ref('unverifiedMobileUsers/' + user.user.uid);
 
             app.update({
                 email: values.email,
@@ -78,10 +80,13 @@ class Register extends Component {
                 contactNumber: values.contactNumber,
                 isMobile: true,
                 user_type: this.state.user_type,
+                isVerified: false,
+            });
+            unverified.update({
+                user_type: this.state.user_type,
             });
 
-        });
-        promise.catch(e => {
+        }).catch(e => {
             var err = e.message;
             Alert.alert(JSON.stringify(`${err}`))
         })
@@ -101,12 +106,12 @@ class Register extends Component {
                     yup.object().shape({
                         firstName: yup
                             .string()
-                            .matches(/[a-zA-Z]/, 'Name cannot cintain Special Characters or Numbers')
+                            .matches(nameRegExp, 'Name cannot cintain Special Characters or Numbers')
                             .required('First Name is Required'),
                         lastName: yup
                             .string()
                             .strict(true)
-                            .matches(/[a-zA-Z]/, 'Name cannot contain Special Characters or Numbers')
+                            .matches(nameRegExp, 'Name cannot contain Special Characters or Numbers')
                             .trim("Name cannot contain Special Characters or Numbers")
                             .required('Last Name is Required'),
                         email: yup
