@@ -1,7 +1,7 @@
 
 import React, { Component } from 'react';
 import {
-  Platform, StyleSheet, Text, View, StatusBar
+  Platform, StyleSheet, Text, View, StatusBar, Alert
 } from 'react-native';
 import Login from './src/components/Login';
 import Register from './src/components/Register';
@@ -15,6 +15,7 @@ import app from './src/config/fire';
 import { Actions } from 'react-native-router-flux';
 
 import Routes from './src/Routes';
+import OfflinePhone from './src/components/OfflinePhone'
 
 YellowBox.ignoreWarnings(['Setting a timer']);
 const _console = _.clone(console);
@@ -31,6 +32,7 @@ export default class App extends Component {
       user: {},
       userId: "",
       userType: [],
+      isVerified: false,
       userAccount: {
         firstName: '',
         lastName: '',
@@ -66,9 +68,26 @@ export default class App extends Component {
     app.database().ref(`users/${this.state.userId}`).once("value").then(snapshot => {
       userValue = snapshot.val();
       // console.log("uservalues", userValue);
-      this.setState({ userType: userValue.user_type });
+      console.log("user values", userValue);
+      this.setState({ userType: userValue.user_type, isVerified: userValue.isVerified });
       this.setState({ userAccount: userValue });
-      this.rerouteUserAccess();
+      if (this.state.isVerified === true) {
+        this.rerouteUserAccess();
+      } else {
+        this.setState({ user: null, userId: null, userAccount: null, isVerified: false, userType: false });
+        console.log("user not verified");
+        Alert.alert(
+          "User is not verified",
+          `Command center must verify user`
+          ,
+          [
+            { text: "Ok", onPress: () => { console.log("ok") } },
+          ],
+          { cancelable: false }
+        );
+
+      }
+
       // this.props.logUser(this.state.userAccount);
     }).catch(err => console.log(err));
 
@@ -104,7 +123,9 @@ export default class App extends Component {
 
   render() {
     return (
+
       <View style={styles.container}>
+        <OfflinePhone />
         <StatusBar
           backgroundColor="#1c313a"
           barStyle="light-content"

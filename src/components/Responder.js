@@ -3,8 +3,8 @@ import React, { Component } from "react";
 import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
 import Modal from 'react-native-modal';
 import ActionButton, { ActionButtonItem } from 'react-native-action-button';
-import { Button } from 'react-native-paper';
-
+// import { Button } from 'react-native-paper';
+import Button from 'react-native-button';
 
 import BottomDrawer from 'rn-bottom-drawer';
 import RadioGroup from 'react-native-radio-buttons-group';
@@ -56,6 +56,7 @@ export default class Responder extends Component {
             isIncidentReady: false,
             destinationPlaceId: '',
             isRequestingResponders: '',
+            dispatchedResponder: false,
             incidentID: '',
             userId: '',
             originalResponder: false,
@@ -197,7 +198,17 @@ export default class Responder extends Component {
         let userId = this.state.userId;
         console.log("is settled?", incidentID, userId);
 
-        this.setState({ isSettled: true })
+        this.setState({
+            isSettled: false,
+            dispatchedResponder: false,
+            isIncidentReady: false,
+            originalResponder: false,
+            isRequestingResponders: false,
+            requestResponders: false,
+            incidentId: '',
+            isAccepted: false,
+
+        })
         var responderListen = app.database().ref(`mobileUsers/Responder/${userId}`)
         responderListen.update({
             incidentID: '',
@@ -222,6 +233,17 @@ export default class Responder extends Component {
         });
     }
 
+    arrivedLocationDispatched = () => {
+        var time = new Date();
+        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+
+        let incidentID = this.state.incidentId;
+        let userId = this.state.userId;
+        console.log("incidentID on arrived Location", incidentID, userId);
+        app.database().ref(`incidents/${incidentID}/additionalDispatched/${userId}`).update({
+            timeArrived: date,
+        });
+    }
 
     isRequestingResponders = (incidentId, userId, destinationPlaceId, incidentLocation) => {
         var time = new Date();
@@ -237,6 +259,10 @@ export default class Responder extends Component {
         app.database().ref(`incidents/${incidentId}/requestResponders/${userId}`).update({
             timeArrived: '',
             timeReceive: date,
+        });
+
+        app.database().ref(`mobileUsers/Responder/${userId}`).update({
+            isAccepted: true,
         });
         this.getRouteDirection(destinationPlaceId, incidentLocation);
     }
@@ -259,6 +285,25 @@ export default class Responder extends Component {
         app.database().ref(`incidents/${incidentID}`).update({
             isRequestingVolunteers: true,
         });
+    }
+
+    additionalDispatchedResponders = (incidentID, userId, destinationPlaceId, incidentLocation) => {
+        var time = new Date();
+        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+
+        console.log("OTHER DISPATCHED", this.state.userId);
+        this.setState({
+            isIncidentReady: true,
+            dispatchedResponder: true,
+        })
+
+        app.database().ref(`incidents/${incidentID}/additionalDispatched/${userId}`).update({
+            timeArrived: '',
+            timeReceive: date,
+        });
+
+        this.getRouteDirection(destinationPlaceId, incidentLocation);
+
     }
 
     incidentListener = (userId) => {
@@ -288,6 +333,7 @@ export default class Responder extends Component {
                         var isSettled = incidentDetails.isSettled;
                         var isRequestingResponders = incidentDetails.isRequestingResponders;
 
+
                         if (incidentID && responderResponding === "" && isSettled === false) {
                             Alert.alert(
                                 "INCIDENT DETAILS ",
@@ -300,9 +346,7 @@ export default class Responder extends Component {
                                 ],
                                 { cancelable: false }
                             );
-                            if (that._isMounted) {
-                                that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID });
-                            }
+                            that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID });
                         }
                         else if (responderResponding === userId && isSettled === false) {
                             console.log("same responder");
@@ -310,7 +354,7 @@ export default class Responder extends Component {
                             that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, isSettled: false });
                             that.getRouteDirection(destinationPlaceId, incidentLocation);
                         }
-                        else if (responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === false) {
+                        else if (responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === false && isSettled === false) {
                             Alert.alert(
                                 "REQUESTING ADDITIONAL RESPONDER ",
                                 `Incident Type: ${incidentType}
@@ -327,6 +371,17 @@ export default class Responder extends Component {
                         else if (responderResponding === userId && isSettled === true) {
                             console.log("same additional responder has acceted")
                             that.setState({ isIncidentReady: false, isSettled: true, incidentId: incidentID });
+                            Alert.alert(
+                                "INCIDENT HAS BEEN SETTLED",
+                                `Incident Type: ${incidentType}
+                                                 Incident Location: ${incidentLocation}
+                                                                         `
+                                ,
+                                [
+                                    { text: "Ok", onPress: () => { that.isSettled(); } },
+                                ],
+                                { cancelable: false }
+                            );
 
                         }
                         else if (responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === true && isSettled === false) {
@@ -343,7 +398,39 @@ export default class Responder extends Component {
                                                                          `
                                 ,
                                 [
-                                    { text: "Respond", onPress: () => { that.isSettled(); } },
+                                    { text: "Ok", onPress: () => { that.isSettled(); } },
+                                ],
+                                { cancelable: false }
+                            );
+                        }
+                        else if (responderResponding !== userId && isRequestingResponders === false && this.state.requestResponders === false && isSettled === false) {
+                            if (that.state.dispatchedResponder === false) {
+                                Alert.alert(
+                                    "INCIDENT DETAILS",
+                                    `Incident Type: ${incidentType}
+                                                 Incident Location: ${incidentLocation}
+                                                                         `
+                                    ,
+                                    [
+                                        { text: "Respond", onPress: () => { that.additionalDispatchedResponders(incidentID, userId, destinationPlaceId, incidentLocation) } },
+                                    ],
+                                    { cancelable: false }
+                                );
+                                that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                            }
+                            this.getRouteDirection(destinationPlaceId, incidentLocation);
+                        }
+
+                        else if (incidentID && isSettled === true) {
+                            that.setState({ isSettled: true, isIncidentReady: false, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                            Alert.alert(
+                                "INCIDENT HAS BEEN SETTLED",
+                                `Incident Type: ${incidentType}
+                                                 Incident Location: ${incidentLocation}
+                                                                         `
+                                ,
+                                [
+                                    { text: "Ok", onPress: () => { that.isSettled(); } },
                                 ],
                                 { cancelable: false }
                             );
@@ -355,9 +442,7 @@ export default class Responder extends Component {
                 }
                 else {
                     console.log("incident Id is not here");
-                    if (that._isMounted) {
-                        that.setState({ isIncidentReady: false, destinationPlaceId: '', incidentLocation: '' });
-                    }
+                    that.setState({ isIncidentReady: false, destinationPlaceId: '', incidentLocation: '' });
                     console.log("incident is not ready", that.state.isIncidentReady);
                 }
             }
@@ -394,8 +479,8 @@ export default class Responder extends Component {
                 // }
                 app.database().ref(`mobileUsers/Responder/${this.state.userId}`).update({
                     coordinates: {
-                        lng: this.state.longitude,
-                        lat: this.state.latitude
+                        lng: position.coords.longitude,
+                        lat: position.coords.latitude
                     },
                 });
 
@@ -517,6 +602,7 @@ export default class Responder extends Component {
                     return { latitude: point[0], longitude: point[1] };
                 });
                 this.setState({
+                    destinationPlaceId,
                     pointCoords,
                     locationPredictions: [],
                     incidentLocation: destinationName,
@@ -559,7 +645,6 @@ export default class Responder extends Component {
         )
 
 
-
         const locationPredictions = this.state.locationPredictions.map(
             prediction => (
                 <TouchableHighlight
@@ -598,8 +683,8 @@ export default class Responder extends Component {
                     showsUserLocation={true}
 
                 >
-                    {this.state.isSettled === false ? polylinemarker : null}
-                    {this.state.isSettled === false ? marker : null}
+                    {this.state.isIncidentReady === true ? polylinemarker : null}
+                    {this.state.isIncidentReady === true ? marker : null}
                 </MapView>
 
 
@@ -611,9 +696,11 @@ export default class Responder extends Component {
                             <ActionButton.Item buttonColor='#9b59b6' title="Arrived (Requested)" onPress={() => { this.arrivedLocationRequested() }}>
                                 <Icon name="md-create" style={styles.actionButtonIcon} />
                             </ActionButton.Item>
-                            : <ActionButton.Item buttonColor='#9b59b6' title="Arrived" onPress={() => { this.arrivedLocation() }}>
+                            : this.state.dispatchedResponder === false ? <ActionButton.Item buttonColor='#9b59b6' title="Arrived" onPress={() => { this.arrivedLocation() }}>
                                 <Icon name="md-create" style={styles.actionButtonIcon} />
-                            </ActionButton.Item>}
+                            </ActionButton.Item> : <ActionButton.Item buttonColor='#9b59b6' title="Arrived" onPress={() => { this.arrivedLocationDispatched() }}>
+                                    <Icon name="md-create" style={styles.actionButtonIcon} />
+                                </ActionButton.Item>}
                         <ActionButton.Item buttonColor='#3498db' title="Request Responders" onPress={() => { this.requestAdditionalResponders() }}>
                             <Icon name="md-notifications-off" style={styles.actionButtonIcon} />
                         </ActionButton.Item>
@@ -674,7 +761,25 @@ export default class Responder extends Component {
 
                     />
                     {locationPredictions}
-                    <ActionButton buttonColor="rgba(50,0,60,1)" title='Submit Incident' position='right' offsetX={17} onPress={this.submitIncidentHandler} />
+                    <Button
+
+                        style={{ fontSize: 18, color: 'white' }}
+                        onPress={this.submitIncidentHandler}
+
+                        containerStyle={{
+                            padding: 8,
+                            marginLeft: 70,
+                            marginRight: 70,
+                            height: 40,
+                            borderRadius: 6,
+                            backgroundColor: 'mediumseagreen',
+                            marginTop: 20,
+                        }}
+
+                        disabled={!this.state.destinationPlaceId || !this.state.incidentLocation || !this.state.incidentType}
+                    >
+                        <Text style={{ justifyContent: 'center', color: 'white' }} >Submit Incident</Text>
+                    </Button>
 
                 </Modal>
             </View>

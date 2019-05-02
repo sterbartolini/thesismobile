@@ -1,5 +1,3 @@
-
-
 import React, { Component } from "react";
 import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
 import Modal from 'react-native-modal';
@@ -31,6 +29,7 @@ export default class RegularUser extends Component {
             userType: '',
             incidentType: "",
             incidentLocation: "",
+            hasDispatched: false,
             firstName: "",
             lastName: "",
             user: null,
@@ -218,11 +217,7 @@ export default class RegularUser extends Component {
             console.log("user data mobile regular", snap);
             var incidentID = snap.incidentID;
             console.log("INCIDENt", incidentID);
-            // if (incidentID) {
-            //     that.incidentResponderListener(incidentID);
-            //     that.incidentVolunteerListener(incidentID);
-            //     that.setState({ incidentID })
-            // }
+
             if (incidentID !== "") {
                 console.log("hey i got here");
                 this.incidentIDListen = app.database().ref(`incidents/${incidentID}`)
@@ -236,7 +231,7 @@ export default class RegularUser extends Component {
                     var isSettled = incidentDetails.isSettled;
                     var incidentType = incidentDetails.incidentType;
                     var destinationPlaceId = incidentDetails.destinationPlaceId;
-                    console.log("DESTINATION PLACE", destinationPlaceId);   
+                    console.log("DESTINATION PLACE", destinationPlaceId);
                     var incidentLocation = incidentDetails.incidentLocation;
                     if (reportedBy === userId && isSettled === false) {
 
@@ -251,24 +246,17 @@ export default class RegularUser extends Component {
                         that.incidentSettled(userId, incidentType, incidentLocation);
 
                     }
+
                 })
             }
             else {
                 console.log("incident Id is not here");
-                // if (that._isMounted) {
-                //     that.setState({ destinationPlaceId: '', incidentLocation: '' });
-                // }
                 console.log("incident is not ready", that.state.isIncidentReady);
             }
         })
     }
 
     incidentSettled = (userId, incidentType, incidentLocation) => {
-
-
-        this.setState({ isSettled: true })
-        this.setState({ markerCoords: null });
-
         Alert.alert(
             "INCIDENT HAS BEEN RESPONDED!! ",
             `Incident Type: ${incidentType}
@@ -285,13 +273,32 @@ export default class RegularUser extends Component {
         responderListen.update({
             incidentID: '',
         })
+        this.setState({
+            isSettled: true,
+            incidentType: '',
+            incidentLocation: '',
+            hasResponderAlerted: false,
+            hasDispatched: false,
+            isRequestingResponders: false,
+            isRequestingVolunteers: false,
+            hasVolunteerAlerted: false,
+            hasDispatched: false,
+            destinationPlaceId: '',
+        })
+        this.setState({ markerCoords: null });
+
 
     }
 
     hasResponderAlert = () => {
         var hasResponderAlerted = true;
         this.setState({ hasResponderAlerted });
-        console.log("ALERT HAS BEEN TRIGGERED");
+        console.log("ALERT RESPONDER HAS BEEN TRIGGERED");
+    }
+
+    dispatchOtherResponder = () => {
+        this.setState({ hasDispatched: true });
+        console.log("ALERT DISPATCH HAS BEEN TRIGGERED");
     }
 
     incidentResponderListener = (incidentID) => {
@@ -301,37 +308,54 @@ export default class RegularUser extends Component {
         var that = this;
         var responderRespondingID = '';
         var hasResponderAlerted = this.state.hasResponderAlerted;
-
+        let hasDispatched = this.state.hasDispatched;
         this.responderListen.on('value', function (snapshot) {
             const data2 = snapshot.val() || null;
             console.log("data2222222222222222", data2);
 
             if (data2) {
                 responderRespondingID = data2.responderResponding;
-                // var destinationPlaceId = data2.destinationPlaceId;
-                if (responderRespondingID) {
-                    if (hasResponderAlerted === false) {
+                dispatchedResponders = data2.dispatchedResponders;
+
+
+                if (responderRespondingID && isRequestingResponders === false && hasResponderAlerted === false) {
+                    Alert.alert(
+                        "A Responder has accepted an incident "
+                        , `${responderRespondingID}`,
+                        [
+                            {
+                                text: "Ok", onPress: () => {
+                                    that.hasResponderAlert()
+                                }
+                            },
+                        ],
+                        { cancelable: false }
+                    );
+                    console.log("responder responding", responderRespondingID);
+                    that.setState({ responderRespondingID });
+                    that.responderCoordinates(responderRespondingID)
+                }
+                if (responderRespondingID && isRequestingResponders === false && hasResponderAlerted === true) {
+                    if (hasDispatched === false) {
                         Alert.alert(
-                            "A Responder has accepted an incident "
-                            , `${responderRespondingID}`,
+                            "Other incoming responders are on the way"
+                            , ``,
                             [
                                 {
                                     text: "Ok", onPress: () => {
-                                        that.hasResponderAlert()
+                                        that.dispatchOtherResponder()
                                     }
                                 },
                             ],
                             { cancelable: false }
                         );
                     }
-                    console.log("responder responding", responderRespondingID);
-                    that.setState({ responderRespondingID });
-                    that.responderCoordinates(responderRespondingID)
                 }
+
                 else {
                     console.log("responder NOT responding", responderRespondingID);
-                    that.setState({ responderRespondingID });
-                    that.responderCoordinates(responderRespondingID)
+                    // that.setState({ responderRespondingID });
+                    // that.responderCoordinates(responderRespondingID)
                 }
 
             }
@@ -550,7 +574,9 @@ export default class RegularUser extends Component {
                             longitude: this.state.markerLng
                         }
                     }
-                />
+                >
+
+                </Marker>
 
             )
         }
@@ -562,7 +588,12 @@ export default class RegularUser extends Component {
                         latitude: this.state.responderLat,
                         longitude: this.state.responderLng,
                     }}
-                />
+                >
+                    <Image
+                        style={{ width: 40, height: 40 }}
+                        source={require("../images/tracking_responder.png")}
+                    />
+                </Marker>
             );
         }
 
@@ -574,7 +605,12 @@ export default class RegularUser extends Component {
                         latitude: this.state.volunteerLat,
                         longitude: this.state.volunteerLng,
                     }}
-                />
+                >
+                    <Image
+                        style={{ width: 40, height: 40 }}
+                        source={require("../images/tracking_volunteer.png")}
+                    />
+                </Marker>
             );
         }
         if (this.state.latitude === null) return null;
@@ -614,16 +650,11 @@ export default class RegularUser extends Component {
                     showsUserLocation={true}
 
                 >
-                  {/* <Polyline
-                        coordinates={this.state.pointCoords}
-                        strokeWidth={4}
-                        strokeColor="red"
-                    /> */}
                     {this.state.isSettled === true ? null : <Polyline
                         coordinates={this.state.pointCoords}
                         strokeWidth={4}
                         strokeColor="red"
-                    /> }
+                    />}
                     {this.state.isSettled === true ? null : marker}
                     {this.state.isSettled === true ? null : markerResponder}
                     {this.state.isSettled === true ? null : markerVolunteer}
@@ -686,8 +717,10 @@ export default class RegularUser extends Component {
                     />
                     {locationPredictions}
                     <Button
+
                         style={{ fontSize: 18, color: 'white' }}
                         onPress={this.submitIncidentHandler}
+
                         containerStyle={{
                             padding: 8,
                             marginLeft: 70,
@@ -697,6 +730,8 @@ export default class RegularUser extends Component {
                             backgroundColor: 'mediumseagreen',
                             marginTop: 20,
                         }}
+
+                        disabled={!this.state.destinationPlaceId || !this.state.incidentLocation || !this.state.incidentType}
                     >
                         <Text style={{ justifyContent: 'center', color: 'white' }} >Submit Incident</Text>
                     </Button>
