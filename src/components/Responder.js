@@ -302,6 +302,10 @@ export default class Responder extends Component {
             timeReceive: date,
         });
 
+        app.database().ref(`mobileUsers/Responder/${userId}`).update({
+            isAccepted: true,
+        });
+
         this.getRouteDirection(destinationPlaceId, incidentLocation);
 
     }

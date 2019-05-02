@@ -273,6 +273,7 @@ export default class Volunteer extends Component {
                                 ,
                                 [
                                     { text: "Respond", onPress: () => { that.changeIncidentState(incidentType, incidentLocation, incidentID, destinationPlaceId, userId) } },
+                                    { text: "Decline", onPress: () => { console.log("decline") } },
                                 ],
                                 { cancelable: false }
                             );
@@ -295,6 +296,7 @@ export default class Volunteer extends Component {
                                 ,
                                 [
                                     { text: "Respond", onPress: () => { that.isRequestingVolunteers(incidentID, userId, destinationPlaceId, incidentLocation) } },
+                                    { text: "Decline", onPress: () => { console.log("decline") } },
                                 ],
                                 { cancelable: false }
                             );

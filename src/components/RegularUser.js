@@ -11,6 +11,7 @@ import _ from 'lodash';
 import app from '../config/fire';
 import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
 
+import BottomDrawer from 'rn-bottom-drawer';
 import PolyLine from '@mapbox/polyline';
 
 
@@ -18,6 +19,29 @@ import PolyLine from '@mapbox/polyline';
 var screen = Dimensions.get('window');
 
 export default class RegularUser extends Component {
+
+    renderContent = () => {
+        return (
+            <View>
+                <Text style={{
+                    fontSize: 20,
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    marginTop: 5
+                }}>
+                    {this.state.incidentType}
+                </Text>
+                <Text style={{
+                    fontSize: 19,
+                    textAlign: 'center',
+                    marginBottom: 10
+                }}>
+                    {this.state.incidentLocation}
+                </Text>
+            </View>
+        )
+    }
+
     _isMounted = false;
     constructor(props) {
         super(props);
@@ -27,9 +51,10 @@ export default class RegularUser extends Component {
             hasVolunteerAlerted: false,
             userKey: "",
             userType: '',
-            incidentType: "",
+            incidentType: "Vehicular Accident",
             incidentLocation: "",
             hasDispatched: false,
+            isIncidentReady: false,
             firstName: "",
             lastName: "",
             user: null,
@@ -237,7 +262,7 @@ export default class RegularUser extends Component {
 
                         that.incidentResponderListener(incidentID);
                         that.incidentVolunteerListener(incidentID);
-                        that.setState({ markerLat, markerLng, isSettled: false });
+                        that.setState({ markerLat, markerLng, isSettled: false, isIncidentReady: true, incidentType });
                         that.getRouteDirection(destinationPlaceId, incidentLocation);
 
 
@@ -284,6 +309,7 @@ export default class RegularUser extends Component {
             hasVolunteerAlerted: false,
             hasDispatched: false,
             destinationPlaceId: '',
+            isIncidentReady: false,
         })
         this.setState({ markerCoords: null });
 
@@ -447,7 +473,19 @@ export default class RegularUser extends Component {
             Keyboard.dismiss();
             this.map.fitToCoordinates(pointCoords);
         } catch (error) {
-            console.error(error);
+            console.log(error);
+            Alert.alert(
+                "Should be within Cebu"
+                , ``,
+                [
+                    {
+                        text: "Ok", onPress: () => {
+                            console.log("ok");
+                        }
+                    },
+                ],
+                { cancelable: false }
+            );
         }
     }
 
@@ -674,68 +712,73 @@ export default class RegularUser extends Component {
                         source={require("../images/exit.png")}
                     />
                 </TouchableOpacity>
-                <TouchableOpacity style={{ top: screen.height - 200, right: screen.width - 450, paddingBottom: 30 }} onPress={this._toggleModal}>
-                    <Image
-                        style={{ width: 70, height: 70 }}
-                        source={require('../images/send.png')}
-                    />
-                </TouchableOpacity>
-                <Modal isVisible={this.state.isModalVisible}
-                    style={{
-                        justifyContent: 'center',
-                        borderRadius: 20,
-                        shadowRadius: 10,
-                        width: screen.width - 50,
-                        backgroundColor: 'white',
-
-                    }}
-                >
-                    <TouchableOpacity onPress={this._toggleModal}>
+                {this.state.isIncidentReady === false ? <View>
+                    <TouchableOpacity style={{ top: screen.height - 200, right: screen.width - 450, paddingBottom: 30 }} onPress={this._toggleModal}>
                         <Image
-                            style={{ width: 45, height: 45, marginLeft: 240 }}
-                            source={require('../images/cancel.png')}
+                            style={{ width: 70, height: 70 }}
+                            source={require('../images/send.png')}
                         />
                     </TouchableOpacity>
-                    <Text style={{
-                        fontSize: 20,
-                        fontWeight: 'bold',
-                        textAlign: 'center',
-                        marginTop: 20,
-                        marginBottom: 15
-                    }}>INPUT INCIDENT
-                    </Text>
-                    <RadioGroup radioButtons={this.state.data} onPress={this.onPress} />
-                    <TextInput
-                        placeholder="Enter location.."
-                        style={styles.destinationInput}
-                        onChangeText={incidentLocation => {
-                            this.setState({ incidentLocation });
-                            this.onChangeDestinationDebounced(incidentLocation);
+                    <Modal isVisible={this.state.isModalVisible}
+                        style={{
+                            justifyContent: 'center',
+                            borderRadius: 20,
+                            shadowRadius: 10,
+                            width: screen.width - 50,
+                            backgroundColor: 'white',
+
                         }}
-                        value={this.state.incidentLocation}
-
-                    />
-                    {locationPredictions}
-                    <Button
-
-                        style={{ fontSize: 18, color: 'white' }}
-                        onPress={this.submitIncidentHandler}
-
-                        containerStyle={{
-                            padding: 8,
-                            marginLeft: 70,
-                            marginRight: 70,
-                            height: 40,
-                            borderRadius: 6,
-                            backgroundColor: 'mediumseagreen',
-                            marginTop: 20,
-                        }}
-
-                        disabled={!this.state.destinationPlaceId || !this.state.incidentLocation || !this.state.incidentType}
                     >
-                        <Text style={{ justifyContent: 'center', color: 'white' }} >Submit Incident</Text>
-                    </Button>
-                </Modal>
+                        <TouchableOpacity onPress={this._toggleModal}>
+                            <Image
+                                style={{ width: 45, height: 45, marginLeft: 240 }}
+                                source={require('../images/cancel.png')}
+                            />
+                        </TouchableOpacity>
+                        <Text style={{
+                            fontSize: 20,
+                            fontWeight: 'bold',
+                            textAlign: 'center',
+                            marginTop: 20,
+                            marginBottom: 15
+                        }}>INPUT INCIDENT
+                    </Text>
+                        <RadioGroup radioButtons={this.state.data} onPress={this.onPress} />
+                        <TextInput
+                            placeholder="Enter location.."
+                            style={styles.destinationInput}
+                            onChangeText={incidentLocation => {
+                                this.setState({ incidentLocation });
+                                this.onChangeDestinationDebounced(incidentLocation);
+                            }}
+                            value={this.state.incidentLocation}
+
+                        />
+                        {locationPredictions}
+                        <Button
+
+                            style={{ fontSize: 18, color: 'white' }}
+                            onPress={this.submitIncidentHandler}
+
+                            containerStyle={{
+                                padding: 8,
+                                marginLeft: 70,
+                                marginRight: 70,
+                                height: 40,
+                                borderRadius: 6,
+                                backgroundColor: 'mediumseagreen',
+                                marginTop: 20,
+                            }}
+
+                            disabled={!this.state.destinationPlaceId || !this.state.incidentLocation || !this.state.incidentType}
+                        >
+                            <Text style={{ justifyContent: 'center', color: 'white' }} >Submit Incident</Text>
+                        </Button>
+                    </Modal>
+                </View> : <BottomDrawer containerHeight={150} downDisplay={50} startUp={false} roundedEdges={true}>
+                        {this.renderContent()}
+                    </BottomDrawer>
+                }
             </View>
         );
     }
