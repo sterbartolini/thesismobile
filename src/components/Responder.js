@@ -3,12 +3,12 @@ import React, { Component } from "react";
 import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
 import Modal from 'react-native-modal';
 import ActionButton, { ActionButtonItem } from 'react-native-action-button';
-import { Button } from 'react-native-paper';
-
+import AwesomeButton from 'react-native-really-awesome-button';
+import Drawer from 'react-native-circle-drawer'
 
 import BottomDrawer from 'rn-bottom-drawer';
 import RadioGroup from 'react-native-radio-buttons-group';
-import Icon from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 import 'babel-polyfill';
 import 'es6-symbol';
@@ -28,25 +28,31 @@ export default class Responder extends Component {
 
     renderContent = () => {
         return (
+            <View style={styles.main}>
             <View>
-                <Text style={{
-                    fontSize: 20,
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                    marginTop: 5
-                }}>
-                    {this.state.incidentType}
-                </Text>
-                <Text style={{
-                    fontSize: 19,
-                    textAlign: 'center',
-                    marginBottom: 10
-                }}>
-                    {this.state.incidentLocation}
-                </Text>
-            </View>
-        )
+          <Text style={{
+                      fontSize: 20,
+                      color:'white',
+                      fontWeight: 'bold',
+                      textAlign: 'center',
+                      marginTop: 5}}> 
+                  {this.state.incidentType}
+          </Text>
+          <Text style={{
+                      color:'white',
+                      fontSize: 19,
+                      textAlign: 'center',
+                      marginBottom: 7}}>  
+                  {this.state.incidentLocation}          
+          </Text></View>
+          <View style={styles.responderButtons}>
+          <View style={styles.buttonContainer}><AwesomeButton height={50} width={190}  backgroundColor="#467541" onPress={this.arrivedLocation}>I have arrived!</AwesomeButton></View>
+          <View style={styles.buttonContainer}><AwesomeButton height={50} width={190}  backgroundColor="#2c6c7c" onPress={this.isSettled}>Incident is settled!</AwesomeButton></View>
+          </View>
+        </View>
+      )
     }
+
     _isMounted = false;
     constructor(props) {
         super(props);
@@ -534,6 +540,22 @@ export default class Responder extends Component {
         this.setState({ isModalVisible: !this.state.isModalVisible });
     }
 
+    renderSideMenu(){
+        return(
+            <View style={{flex:1}}>
+                <Text>Item 1 </Text>
+                <Text>Item 2 </Text>
+            </View>
+        )
+    }
+    
+    renderTopRightView(){
+        return(
+            <View>
+                <Text>Hello</Text>
+            </View>
+        )
+    }
 
     render() {
 
@@ -602,40 +624,46 @@ export default class Responder extends Component {
                     {this.state.isSettled === false ? marker : null}
                 </MapView>
 
+     <Drawer
+            ref="DRAWER"
+            sideMenu={this.renderSideMenu()}
+            topRightView={this.renderTopRightView()}
+        >
+          {/* <TouchableOpacity style={styles.profile} onPress={()=>{this.refs.DRAWER.open()}}>
+          <Text style={styles.profileText}>Profile</Text></TouchableOpacity> 
+          <Image source={require('../images/cancel.png')}/>*/}
+        <View style={styles.profile}><AwesomeButton borderRadius={50} height={35} width={35}  backgroundColor="#2c6c7c" raiseLevel={2} backgroundDarker="rgba(0,0,0,0.1)" onPress={()=>{this.refs.DRAWER.open()}}>
+        ! </AwesomeButton></View>
+        </Drawer>
 
-                {!this.state.isIncidentReady ?
-                    <ActionButton buttonColor="rgba(50,0,60,1)" position='right' offsetX={17} onPress={this.signOutUser} /> :
+             {!this.state.isIncidentReady ?
+    <ActionButton buttonColor="rgba(50,0,60,1)" position='right' offsetX={15} onPress={this.signOutUser} /> :
 
-                    <ActionButton buttonColor="orange" position='left' offsetY={85} offsetX={17}>
-                        {this.state.requestResponders === true ?
-                            <ActionButton.Item buttonColor='#9b59b6' title="Arrived (Requested)" onPress={() => { this.arrivedLocationRequested() }}>
-                                <Icon name="md-create" style={styles.actionButtonIcon} />
-                            </ActionButton.Item>
-                            : <ActionButton.Item buttonColor='#9b59b6' title="Arrived" onPress={() => { this.arrivedLocation() }}>
-                                <Icon name="md-create" style={styles.actionButtonIcon} />
-                            </ActionButton.Item>}
-                        <ActionButton.Item buttonColor='#3498db' title="Request Responders" onPress={() => { this.requestAdditionalResponders() }}>
-                            <Icon name="md-notifications-off" style={styles.actionButtonIcon} />
-                        </ActionButton.Item>
-                        <ActionButton.Item buttonColor='#1abc9c' title="Request Volunteers" onPress={() => { this.requestAdditionalVolunteers() }}>
-                            <Icon name="md-done-all" style={styles.actionButtonIcon} />
-                        </ActionButton.Item>
-                        <ActionButton.Item buttonColor='#1abc9c' title="Incident is Settled" onPress={() => { this.isSettled() }}>
-                            <Icon name="md-done-all" style={styles.actionButtonIcon} />
-                        </ActionButton.Item>
-                        <ActionButton.Item buttonColor='#1abc9c' title="Sign Out" onPress={this.signOutUser}>
-                            <Icon name="md-done-all" style={styles.actionButtonIcon} />
-                        </ActionButton.Item>
+    <ActionButton buttonColor="orange" position='left' offsetY={45} offsetX={15}
+    renderIcon={() => (<Icon name="user-plus" style={styles.actionButtonIcon}/>)}>
+    <ActionButton.Item buttonColor='#3498db' title="I need more responders" onPress={() => {this.requestAdditionalResponders()}}>
+      <Icon name="user-plus" style={styles.actionButtonIcon} />
+    </ActionButton.Item>
+    <ActionButton.Item buttonColor='#1abc9c' title="I need more volunteers" onPress={() => {this.requestAdditionalVolunteers()}}>
+      <Icon name="user-plus" style={styles.actionButtonIcon} />
+    </ActionButton.Item>
+  </ActionButton>
+}  
 
-                    </ActionButton>
-                }
-
-                {this.state.isIncidentReady ?
-                    <BottomDrawer containerHeight={150} downDisplay={50} startUp={false} roundedEdges={true}>
-                        {this.renderContent()}
-                    </BottomDrawer> :
-                    <ActionButton buttonColor="rgba(0,76,60,1)" position='left' offsetX={17} onPress={this._toggleModal} />
-                }
+{this.state.isIncidentReady ?
+    <BottomDrawer containerHeight={170} startUp={false} roundedEdges={true}>
+          {this.renderContent()}
+    </BottomDrawer> :
+    <ActionButton
+    shadowStyle={styles.shadow}
+    buttonColor="#e2780e"
+    position='left'
+    offsetX={25}
+    onPress={this._toggleModal}
+    renderIcon={() => (
+        <Image source={require("../images/sendreport.png")}/>
+      )}/>
+}
 
 
                 <Modal isVisible={this.state.isModalVisible}
@@ -674,7 +702,7 @@ export default class Responder extends Component {
 
                     />
                     {locationPredictions}
-                    <ActionButton buttonColor="rgba(50,0,60,1)" title='Submit Incident' position='right' offsetX={17} onPress={this.submitIncidentHandler} />
+                    <ActionButton buttonColor="rgba(50,0,60,1)" title='Submit Incident' position='right' offsetX={15} onPress={this.submitIncidentHandler} />
 
                 </Modal>
             </View>
@@ -684,16 +712,39 @@ export default class Responder extends Component {
 
 
 const styles = StyleSheet.create({
+    profile: {
+        marginLeft: 12,
+        marginTop: 10
+    },
+    actionButtonIcon: {
+        fontSize: 20,
+        height: 22,
+        color: 'white',
+      },
+    responderButtons: {
+        flex: 1,
+        flexDirection:'row',
+        justifyContent: 'center',
+        padding: 10,
+        alignItems: 'center',
+        marginBottom: 15
+      },
+      buttonContainer:{
+          flex:1,
+      },
+    main: {
+        flex: 1,
+        justifyContent: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#232323'
+    },
     user: {
         position: 'absolute',
         top: 150
     },
-    main: {
-        flex: 1,
-        padding: 30,
-        flexDirection: 'column',
-        justifyContent: 'center',
-        backgroundColor: '#6565fc'
+    shadow:{
+        shadowColor: 'black',
+        shadowRadius: 100
     },
     container: {
         ...StyleSheet.absoluteFillObject,

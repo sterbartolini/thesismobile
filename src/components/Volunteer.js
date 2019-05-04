@@ -2,7 +2,6 @@ import React, { Component } from "react";
 import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
 import Modal from 'react-native-modal';
 import ActionButton, { ActionButtonItem } from 'react-native-action-button';
-import { Button } from 'react-native-paper';
 
 
 import BottomDrawer from 'rn-bottom-drawer';
