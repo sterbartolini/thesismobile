@@ -1,6 +1,7 @@
 
 import React, { Component } from "react";
-import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
+import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert,
+    DrawerLayoutAndroid} from "react-native";
 import Modal from 'react-native-modal';
 import ActionButton, { ActionButtonItem } from 'react-native-action-button';
 import AwesomeButton from 'react-native-really-awesome-button';
@@ -22,6 +23,7 @@ import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
 import PolyLine from '@mapbox/polyline';
 var screen = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 100;
+var profileName='LOL';
 
 
 export default class Responder extends Component {
@@ -53,6 +55,7 @@ export default class Responder extends Component {
       )
     }
 
+    
     _isMounted = false;
     constructor(props) {
         super(props);
@@ -158,9 +161,11 @@ export default class Responder extends Component {
             if (data2) {
                 userType = data2.user_type;
                 firstName = data2.firstName;
-                lastName = data2.lastName;
+                lastName = data2.lastName;   
+                this.firstName=firstName;     
             }
-
+            
+            profileName=data2.firstName;
         })
         this.setState({ userType, firstName, lastName });
 
@@ -540,19 +545,35 @@ export default class Responder extends Component {
         this.setState({ isModalVisible: !this.state.isModalVisible });
     }
 
+    _openDrawer = () => {
+        this.refs.DRAWER.open();
+    }
+
+   
     renderSideMenu(){
         return(
-            <View style={{flex:1}}>
-                <Text>Item 1 </Text>
-                <Text>Item 2 </Text>
+            <View>
+              <Text style={{color:'white', fontWeight:'bold', fontSize:50}}>
+                     Hello {profileName}!
+                 </Text>
+                 <TouchableOpacity onPress={()=>{console.log(profileName)}}>
+                     <Text style={{color:'white', fontSize:30}}>
+                         Profile
+                     </Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity onPress={this.signOutUser}>
+                     <Text style={{color:'white', fontSize:30}}>
+                         Log Out
+                     </Text>
+                 </TouchableOpacity>
             </View>
         )
     }
-    
+
     renderTopRightView(){
         return(
-            <View>
-                <Text>Hello</Text>
+            <View style={{top:10,left:75}}>
+                <Image style={{width:65, height:65}} source={require("../images/avatar.png")}/>
             </View>
         )
     }
@@ -604,10 +625,38 @@ export default class Responder extends Component {
 
         if (this.state.latitude === null) return null;
 
-        return (
+         var navigationView = (<View>
+              <Text style={{color:'white', fontWeight:'bold', fontSize:50}}>
+                     Hello {profileName}!
+                 </Text>
+                 <TouchableOpacity onPress={()=>{console.log(profileName)}}>
+                     <Text style={{color:'white', fontSize:30}}>
+                         Profile
+                     </Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity onPress={this.signOutUser}>
+                     <Text style={{color:'white', fontSize:30}}>
+                         Log Out
+                     </Text>
+                 </TouchableOpacity>
+            </View>)
 
-            <View style={styles.container}>
-                <MapView
+          
+        return (
+ <View style={styles.container}>
+            <Drawer
+             style={styles.mapDrawerOverlay}
+             ref="DRAWER"
+            primaryColor="#2d2d2d"
+             secondaryColor="#5C7788"
+             cancelColor="#5C7788"
+             sideMenu={this.renderSideMenu()}
+          topRightView={this.renderTopRightView()}/>
+
+<AwesomeButton backgroundColor="#2d2d2d" borderRadius={50} height={35} width={35} raiseLevel={2} backgroundDarker="rgba(0,0,0,0.05)" onPress={this._openDrawer}>
+          <Image style={{width:22.63, height:15.33}} source={require("../images/menu.png")}/></AwesomeButton>
+
+          <MapView
                     ref={map => { this.map = map; }}
                     provider={PROVIDER_GOOGLE} // remove if not using Google Maps
                     style={styles.map}
@@ -623,29 +672,16 @@ export default class Responder extends Component {
                     {this.state.isSettled === false ? polylinemarker : null}
                     {this.state.isSettled === false ? marker : null}
                 </MapView>
+            
+                {!this.state.isIncidentReady ? null :
 
-     <Drawer
-            ref="DRAWER"
-            sideMenu={this.renderSideMenu()}
-            topRightView={this.renderTopRightView()}
-        >
-          {/* <TouchableOpacity style={styles.profile} onPress={()=>{this.refs.DRAWER.open()}}>
-          <Text style={styles.profileText}>Profile</Text></TouchableOpacity> 
-          <Image source={require('../images/cancel.png')}/>*/}
-        <View style={styles.profile}><AwesomeButton borderRadius={50} height={35} width={35}  backgroundColor="#2c6c7c" raiseLevel={2} backgroundDarker="rgba(0,0,0,0.1)" onPress={()=>{this.refs.DRAWER.open()}}>
-        ! </AwesomeButton></View>
-        </Drawer>
-
-             {!this.state.isIncidentReady ?
-    <ActionButton buttonColor="rgba(50,0,60,1)" position='right' offsetX={15} onPress={this.signOutUser} /> :
-
-    <ActionButton buttonColor="orange" position='left' offsetY={45} offsetX={15}
+    <ActionButton buttonColor="orange" position='left' offsetY={45} offsetX={13}
     renderIcon={() => (<Icon name="user-plus" style={styles.actionButtonIcon}/>)}>
     <ActionButton.Item buttonColor='#3498db' title="I need more responders" onPress={() => {this.requestAdditionalResponders()}}>
       <Icon name="user-plus" style={styles.actionButtonIcon} />
     </ActionButton.Item>
     <ActionButton.Item buttonColor='#1abc9c' title="I need more volunteers" onPress={() => {this.requestAdditionalVolunteers()}}>
-      <Icon name="user-plus" style={styles.actionButtonIcon} />
+      <Image source={require("../images/sendreport.png")}/>
     </ActionButton.Item>
   </ActionButton>
 }  
@@ -655,16 +691,14 @@ export default class Responder extends Component {
           {this.renderContent()}
     </BottomDrawer> :
     <ActionButton
-    shadowStyle={styles.shadow}
-    buttonColor="#e2780e"
+    buttonColor="#2d2d2d"
+    shadowStyle={{shadowRadius:10, shadowColor:'black', shadowOpacity:1}}
     position='left'
-    offsetX={25}
+    offsetX={13}
     onPress={this._toggleModal}
-    renderIcon={() => (
-        <Image source={require("../images/sendreport.png")}/>
-      )}/>
+    icon={<Image source={require("../images/sendreport.png")}/>}
+    />
 }
-
 
                 <Modal isVisible={this.state.isModalVisible}
                     style={{
@@ -702,7 +736,7 @@ export default class Responder extends Component {
 
                     />
                     {locationPredictions}
-                    <ActionButton buttonColor="rgba(50,0,60,1)" title='Submit Incident' position='right' offsetX={15} onPress={this.submitIncidentHandler} />
+                    <ActionButton buttonColor="rgba(50,0,60,1)" title='Submit Incident' position='right' offsetX={13} onPress={this.submitIncidentHandler} />
 
                 </Modal>
             </View>
@@ -712,6 +746,14 @@ export default class Responder extends Component {
 
 
 const styles = StyleSheet.create({
+    mapDrawerOverlay: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        opacity: 0.0,
+        height: Dimensions.get('window').height,
+        width: 10,
+      },
     profile: {
         marginLeft: 12,
         marginTop: 10
@@ -744,16 +786,20 @@ const styles = StyleSheet.create({
     },
     shadow:{
         shadowColor: 'black',
-        shadowRadius: 100
+        shadowRadius: 100,
+        shadowOpacity: 1
     },
     container: {
-        ...StyleSheet.absoluteFillObject,
+        
         flex: 1,
         // justifyContent: 'center',
         // alignItems: 'center',
     },
     map: {
-        ...StyleSheet.absoluteFillObject,
+    //     width: screen.width,
+    // height: Dimensions.get('window').height,
+    ...StyleSheet.absoluteFillObject,
+
     },
     title: {
         marginBottom: 20,

@@ -15,7 +15,7 @@
     "lodash": "^4.17.11",
     "react": "16.6.3",
     "react-native": "0.58.6",
-    "react-native-action-button": "^2.8.5",
+    "react-native-action-button": "^2.7.2",
     "react-native-bottom-sheet-behavior": "^1.0.0",
     "react-native-button": "^2.3.0",
     "react-native-circle-drawer": "^1.0.0",
