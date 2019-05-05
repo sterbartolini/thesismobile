@@ -742,8 +742,8 @@ export default class Responder extends Component {
              sideMenu={this.renderSideMenu()}
           topRightView={this.renderTopRightView()}/>
 
-<AwesomeButton backgroundColor="#2d2d2d" borderRadius={50} height={35} width={35} raiseLevel={2} backgroundDarker="rgba(0,0,0,0.05)" onPress={this._openDrawer}>
-          <Image style={{width:22.63, height:15.33}} source={require("../images/menu.png")}/></AwesomeButton>
+<View style={{alignSelf:'flex-end', position:'absolute', marginTop:5, paddingRight:5}}><AwesomeButton backgroundColor="#2d2d2d" borderRadius={50} height={35} width={35} raiseLevel={2} backgroundDarker="rgba(0,0,0,0.05)" onPress={this._openDrawer}>
+          <Image style={{width:22.63, height:15.33}} source={require("../images/menu.png")}/></AwesomeButton></View>
 
           <MapView
                     ref={map => { this.map = map; }}
