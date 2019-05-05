@@ -170,7 +170,12 @@ export default class Volunteer extends Component {
         let incidentID = this.state.incidentId;
         let userId = this.state.userId;
         console.log("is settled?", incidentID, userId);
-        this.setState({ isIncidentReady: false, isSettled: true, incidentId: incidentID });
+        this.setState({
+            isIncidentReady: false,
+            isSettled: true,
+            incidentId: '',
+            requestVolunteers: false,
+        });
         // this.setState({ isSettled: true })
         var volunteerListen = app.database().ref(`mobileUsers/Volunteer/${userId}`)
         volunteerListen.update({
@@ -212,6 +217,10 @@ export default class Volunteer extends Component {
 
             timeArrived: '',
             timeReceive: date,
+        });
+
+        app.database().ref(`mobileUsers/Volunteer/${userId}`).update({
+            isAccepted: true,
         });
         this.getRouteDirection(destinationPlaceId, incidentLocation);
     }
@@ -263,6 +272,7 @@ export default class Volunteer extends Component {
                                 ,
                                 [
                                     { text: "Respond", onPress: () => { that.changeIncidentState(incidentType, incidentLocation, incidentID, destinationPlaceId, userId) } },
+                                    { text: "Decline", onPress: () => { console.log("decline") } },
                                 ],
                                 { cancelable: false }
                             );
@@ -276,7 +286,7 @@ export default class Volunteer extends Component {
                             that.setState({ originalVolunteer: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, isSettled: false });
                             that.getRouteDirection(destinationPlaceId, incidentLocation);
                         }
-                        else if (volunteerResponding !== userId && this.isRequestingVolunteers === true && this.state.requestVolunteers === false) {
+                        else if (volunteerResponding !== userId && isRequestingVolunteers === true && this.state.requestVolunteers === false) {
                             Alert.alert(
                                 "REQUESTING ADDITIONAL VOLUNTEER ",
                                 `Incident Type: ${incidentType}
@@ -285,6 +295,7 @@ export default class Volunteer extends Component {
                                 ,
                                 [
                                     { text: "Respond", onPress: () => { that.isRequestingVolunteers(incidentID, userId, destinationPlaceId, incidentLocation) } },
+                                    { text: "Decline", onPress: () => { console.log("decline") } },
                                 ],
                                 { cancelable: false }
                             );
@@ -585,9 +596,14 @@ export default class Volunteer extends Component {
                     <ActionButton buttonColor="rgba(50,0,60,1)" position='right' offsetX={17} onPress={this.signOutUser} /> :
 
                     <ActionButton buttonColor="orange" position='left' offsetY={85} offsetX={17}>
-                        <ActionButton.Item buttonColor='#9b59b6' title="I have arrived" onPress={() => { this.arrivedLocation() }}>
-                            <Icon name="md-create" style={styles.actionButtonIcon} />
-                        </ActionButton.Item>
+                        {this.state.requestVolunteers === true ?
+                            <ActionButton.Item buttonColor='#9b59b6' title="Arrived (Requested)" onPress={() => { this.arrivedLocationRequested() }}>
+                                <Icon name="md-create" style={styles.actionButtonIcon} />
+                            </ActionButton.Item>
+                            : <ActionButton.Item buttonColor='#9b59b6' title="Arrived" onPress={() => { this.arrivedLocation() }}>
+                                <Icon name="md-create" style={styles.actionButtonIcon} />
+                            </ActionButton.Item>
+                        }
                         <ActionButton.Item buttonColor='#1abc9c' title="Sign Out" onPress={this.signOutUser}>
                             <Icon name="md-done-all" style={styles.actionButtonIcon} />
                         </ActionButton.Item>

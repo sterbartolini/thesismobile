@@ -1,5 +1,3 @@
-
-
 import React, { Component } from "react";
 import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
 import Modal from 'react-native-modal';
@@ -13,6 +11,7 @@ import _ from 'lodash';
 import app from '../config/fire';
 import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
 
+import BottomDrawer from 'rn-bottom-drawer';
 import PolyLine from '@mapbox/polyline';
 
 
@@ -20,6 +19,29 @@ import PolyLine from '@mapbox/polyline';
 var screen = Dimensions.get('window');
 
 export default class RegularUser extends Component {
+
+    renderContent = () => {
+        return (
+            <View>
+                <Text style={{
+                    fontSize: 20,
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    marginTop: 5
+                }}>
+                    {this.state.incidentType}
+                </Text>
+                <Text style={{
+                    fontSize: 19,
+                    textAlign: 'center',
+                    marginBottom: 10
+                }}>
+                    {this.state.incidentLocation}
+                </Text>
+            </View>
+        )
+    }
+
     _isMounted = false;
     constructor(props) {
         super(props);
@@ -29,8 +51,10 @@ export default class RegularUser extends Component {
             hasVolunteerAlerted: false,
             userKey: "",
             userType: '',
-            incidentType: "",
+            incidentType: "Vehicular Accident",
             incidentLocation: "",
+            hasDispatched: false,
+            isIncidentReady: false,
             firstName: "",
             lastName: "",
             user: null,
@@ -218,11 +242,7 @@ export default class RegularUser extends Component {
             console.log("user data mobile regular", snap);
             var incidentID = snap.incidentID;
             console.log("INCIDENt", incidentID);
-            // if (incidentID) {
-            //     that.incidentResponderListener(incidentID);
-            //     that.incidentVolunteerListener(incidentID);
-            //     that.setState({ incidentID })
-            // }
+
             if (incidentID !== "") {
                 console.log("hey i got here");
                 this.incidentIDListen = app.database().ref(`incidents/${incidentID}`)
@@ -236,13 +256,13 @@ export default class RegularUser extends Component {
                     var isSettled = incidentDetails.isSettled;
                     var incidentType = incidentDetails.incidentType;
                     var destinationPlaceId = incidentDetails.destinationPlaceId;
-                    console.log("DESTINATION PLACE", destinationPlaceId);   
+                    console.log("DESTINATION PLACE", destinationPlaceId);
                     var incidentLocation = incidentDetails.incidentLocation;
                     if (reportedBy === userId && isSettled === false) {
 
                         that.incidentResponderListener(incidentID);
                         that.incidentVolunteerListener(incidentID);
-                        that.setState({ markerLat, markerLng, isSettled: false });
+                        that.setState({ markerLat, markerLng, isSettled: false, isIncidentReady: true, incidentType });
                         that.getRouteDirection(destinationPlaceId, incidentLocation);
 
 
@@ -251,24 +271,17 @@ export default class RegularUser extends Component {
                         that.incidentSettled(userId, incidentType, incidentLocation);
 
                     }
+
                 })
             }
             else {
                 console.log("incident Id is not here");
-                // if (that._isMounted) {
-                //     that.setState({ destinationPlaceId: '', incidentLocation: '' });
-                // }
                 console.log("incident is not ready", that.state.isIncidentReady);
             }
         })
     }
 
     incidentSettled = (userId, incidentType, incidentLocation) => {
-
-
-        this.setState({ isSettled: true })
-        this.setState({ markerCoords: null });
-
         Alert.alert(
             "INCIDENT HAS BEEN RESPONDED!! ",
             `Incident Type: ${incidentType}
@@ -285,13 +298,33 @@ export default class RegularUser extends Component {
         responderListen.update({
             incidentID: '',
         })
+        this.setState({
+            isSettled: true,
+            incidentType: '',
+            incidentLocation: '',
+            hasResponderAlerted: false,
+            hasDispatched: false,
+            isRequestingResponders: false,
+            isRequestingVolunteers: false,
+            hasVolunteerAlerted: false,
+            hasDispatched: false,
+            destinationPlaceId: '',
+            isIncidentReady: false,
+        })
+        this.setState({ markerCoords: null });
+
 
     }
 
     hasResponderAlert = () => {
         var hasResponderAlerted = true;
         this.setState({ hasResponderAlerted });
-        console.log("ALERT HAS BEEN TRIGGERED");
+        console.log("ALERT RESPONDER HAS BEEN TRIGGERED");
+    }
+
+    dispatchOtherResponder = () => {
+        this.setState({ hasDispatched: true });
+        console.log("ALERT DISPATCH HAS BEEN TRIGGERED");
     }
 
     incidentResponderListener = (incidentID) => {
@@ -301,37 +334,54 @@ export default class RegularUser extends Component {
         var that = this;
         var responderRespondingID = '';
         var hasResponderAlerted = this.state.hasResponderAlerted;
-
+        let hasDispatched = this.state.hasDispatched;
         this.responderListen.on('value', function (snapshot) {
             const data2 = snapshot.val() || null;
             console.log("data2222222222222222", data2);
 
             if (data2) {
                 responderRespondingID = data2.responderResponding;
-                // var destinationPlaceId = data2.destinationPlaceId;
-                if (responderRespondingID) {
-                    if (hasResponderAlerted === false) {
+                dispatchedResponders = data2.dispatchedResponders;
+
+
+                if (responderRespondingID && isRequestingResponders === false && hasResponderAlerted === false) {
+                    Alert.alert(
+                        "A Responder has accepted an incident "
+                        , `${responderRespondingID}`,
+                        [
+                            {
+                                text: "Ok", onPress: () => {
+                                    that.hasResponderAlert()
+                                }
+                            },
+                        ],
+                        { cancelable: false }
+                    );
+                    console.log("responder responding", responderRespondingID);
+                    that.setState({ responderRespondingID });
+                    that.responderCoordinates(responderRespondingID)
+                }
+                if (responderRespondingID && isRequestingResponders === false && hasResponderAlerted === true) {
+                    if (hasDispatched === false) {
                         Alert.alert(
-                            "A Responder has accepted an incident "
-                            , `${responderRespondingID}`,
+                            "Other incoming responders are on the way"
+                            , ``,
                             [
                                 {
                                     text: "Ok", onPress: () => {
-                                        that.hasResponderAlert()
+                                        that.dispatchOtherResponder()
                                     }
                                 },
                             ],
                             { cancelable: false }
                         );
                     }
-                    console.log("responder responding", responderRespondingID);
-                    that.setState({ responderRespondingID });
-                    that.responderCoordinates(responderRespondingID)
                 }
+
                 else {
                     console.log("responder NOT responding", responderRespondingID);
-                    that.setState({ responderRespondingID });
-                    that.responderCoordinates(responderRespondingID)
+                    // that.setState({ responderRespondingID });
+                    // that.responderCoordinates(responderRespondingID)
                 }
 
             }
@@ -423,7 +473,19 @@ export default class RegularUser extends Component {
             Keyboard.dismiss();
             this.map.fitToCoordinates(pointCoords);
         } catch (error) {
-            console.error(error);
+            console.log(error);
+            Alert.alert(
+                "Should be within Cebu"
+                , ``,
+                [
+                    {
+                        text: "Ok", onPress: () => {
+                            console.log("ok");
+                        }
+                    },
+                ],
+                { cancelable: false }
+            );
         }
     }
 
@@ -550,7 +612,9 @@ export default class RegularUser extends Component {
                             longitude: this.state.markerLng
                         }
                     }
-                />
+                >
+
+                </Marker>
 
             )
         }
@@ -562,7 +626,12 @@ export default class RegularUser extends Component {
                         latitude: this.state.responderLat,
                         longitude: this.state.responderLng,
                     }}
-                />
+                >
+                    <Image
+                        style={{ width: 40, height: 40 }}
+                        source={require("../images/tracking_responder.png")}
+                    />
+                </Marker>
             );
         }
 
@@ -574,7 +643,12 @@ export default class RegularUser extends Component {
                         latitude: this.state.volunteerLat,
                         longitude: this.state.volunteerLng,
                     }}
-                />
+                >
+                    <Image
+                        style={{ width: 40, height: 40 }}
+                        source={require("../images/tracking_volunteer.png")}
+                    />
+                </Marker>
             );
         }
         if (this.state.latitude === null) return null;
@@ -614,16 +688,11 @@ export default class RegularUser extends Component {
                     showsUserLocation={true}
 
                 >
-                  {/* <Polyline
-                        coordinates={this.state.pointCoords}
-                        strokeWidth={4}
-                        strokeColor="red"
-                    /> */}
                     {this.state.isSettled === true ? null : <Polyline
                         coordinates={this.state.pointCoords}
                         strokeWidth={4}
                         strokeColor="red"
-                    /> }
+                    />}
                     {this.state.isSettled === true ? null : marker}
                     {this.state.isSettled === true ? null : markerResponder}
                     {this.state.isSettled === true ? null : markerVolunteer}
@@ -643,64 +712,73 @@ export default class RegularUser extends Component {
                         source={require("../images/exit.png")}
                     />
                 </TouchableOpacity>
-                <TouchableOpacity style={{ top: screen.height - 200, right: screen.width - 450, paddingBottom: 30 }} onPress={this._toggleModal}>
-                    <Image
-                        style={{ width: 70, height: 70 }}
-                        source={require('../images/send.png')}
-                    />
-                </TouchableOpacity>
-                <Modal isVisible={this.state.isModalVisible}
-                    style={{
-                        justifyContent: 'center',
-                        borderRadius: 20,
-                        shadowRadius: 10,
-                        width: screen.width - 50,
-                        backgroundColor: 'white',
-
-                    }}
-                >
-                    <TouchableOpacity onPress={this._toggleModal}>
+                {this.state.isIncidentReady === false ? <View>
+                    <TouchableOpacity style={{ top: screen.height - 200, right: screen.width - 450, paddingBottom: 30 }} onPress={this._toggleModal}>
                         <Image
-                            style={{ width: 45, height: 45, marginLeft: 240 }}
-                            source={require('../images/cancel.png')}
+                            style={{ width: 70, height: 70 }}
+                            source={require('../images/send.png')}
                         />
                     </TouchableOpacity>
-                    <Text style={{
-                        fontSize: 20,
-                        fontWeight: 'bold',
-                        textAlign: 'center',
-                        marginTop: 20,
-                        marginBottom: 15
-                    }}>INPUT INCIDENT
-                    </Text>
-                    <RadioGroup radioButtons={this.state.data} onPress={this.onPress} />
-                    <TextInput
-                        placeholder="Enter location.."
-                        style={styles.destinationInput}
-                        onChangeText={incidentLocation => {
-                            this.setState({ incidentLocation });
-                            this.onChangeDestinationDebounced(incidentLocation);
-                        }}
-                        value={this.state.incidentLocation}
+                    <Modal isVisible={this.state.isModalVisible}
+                        style={{
+                            justifyContent: 'center',
+                            borderRadius: 20,
+                            shadowRadius: 10,
+                            width: screen.width - 50,
+                            backgroundColor: 'white',
 
-                    />
-                    {locationPredictions}
-                    <Button
-                        style={{ fontSize: 18, color: 'white' }}
-                        onPress={this.submitIncidentHandler}
-                        containerStyle={{
-                            padding: 8,
-                            marginLeft: 70,
-                            marginRight: 70,
-                            height: 40,
-                            borderRadius: 6,
-                            backgroundColor: 'mediumseagreen',
-                            marginTop: 20,
                         }}
                     >
-                        <Text style={{ justifyContent: 'center', color: 'white' }} >Submit Incident</Text>
-                    </Button>
-                </Modal>
+                        <TouchableOpacity onPress={this._toggleModal}>
+                            <Image
+                                style={{ width: 45, height: 45, marginLeft: 240 }}
+                                source={require('../images/cancel.png')}
+                            />
+                        </TouchableOpacity>
+                        <Text style={{
+                            fontSize: 20,
+                            fontWeight: 'bold',
+                            textAlign: 'center',
+                            marginTop: 20,
+                            marginBottom: 15
+                        }}>INPUT INCIDENT
+                    </Text>
+                        <RadioGroup radioButtons={this.state.data} onPress={this.onPress} />
+                        <TextInput
+                            placeholder="Enter location.."
+                            style={styles.destinationInput}
+                            onChangeText={incidentLocation => {
+                                this.setState({ incidentLocation });
+                                this.onChangeDestinationDebounced(incidentLocation);
+                            }}
+                            value={this.state.incidentLocation}
+
+                        />
+                        {locationPredictions}
+                        <Button
+
+                            style={{ fontSize: 18, color: 'white' }}
+                            onPress={this.submitIncidentHandler}
+
+                            containerStyle={{
+                                padding: 8,
+                                marginLeft: 70,
+                                marginRight: 70,
+                                height: 40,
+                                borderRadius: 6,
+                                backgroundColor: 'mediumseagreen',
+                                marginTop: 20,
+                            }}
+
+                            disabled={!this.state.destinationPlaceId || !this.state.incidentLocation || !this.state.incidentType}
+                        >
+                            <Text style={{ justifyContent: 'center', color: 'white' }} >Submit Incident</Text>
+                        </Button>
+                    </Modal>
+                </View> : <BottomDrawer containerHeight={150} downDisplay={50} startUp={false} roundedEdges={true}>
+                        {this.renderContent()}
+                    </BottomDrawer>
+                }
             </View>
         );
     }
